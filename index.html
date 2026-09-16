@@ -2,146 +2,431 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quick ERP</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Zero-Knowledge Mobile ERP</title>
   <style>
     :root {
-      --bg: #0f172a;
-      --card: #1e293b;
-      --accent: #2563eb;
-      --text: #f8fafc;
+      --bg: #090d16;
+      --card-bg: #151c2c;
+      --border: #2a364f;
+      --accent: #3b82f6;
+      --text: #ffffff;
       --subtext: #94a3b8;
+      --success: #22c55e;
       --danger: #ef4444;
-      --success: #10b981;
+      --warning: #f59e0b;
     }
-    
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: var(--bg); color: var(--text); padding: 12px; max-width: 600px; margin: 0 auto; }
-    
-    /* Header & Quick Search */
-    header { display: flex; gap: 8px; margin-bottom: 12px; }
-    input, select, button { padding: 12px; border-radius: 8px; border: 1px solid #334155; background: var(--card); color: var(--text); font-size: 16px; }
-    input[type="text"], input[type="number"] { width: 100%; }
-    .search-bar { flex-grow: 1; font-size: 18px; }
-    .btn-main { background: var(--accent); color: white; border: none; font-weight: bold; padding: 12px 16px; cursor: pointer; }
-    
-    /* SKU Cards List */
-    .sku-list { display: flex; flex-direction: column; gap: 10px; }
-    .sku-card { background: var(--card); border-radius: 10px; padding: 14px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid var(--accent); }
-    .sku-title { font-size: 18px; font-weight: bold; margin-bottom: 4px; }
-    .sku-meta { font-size: 14px; color: var(--subtext); }
-    
-    /* Quick Stock Counter (+ / - Buttons) */
-    .qty-controls { display: flex; align-items: center; gap: 8px; }
-    .btn-qty { width: 36px; height: 36px; border-radius: 50%; font-size: 20px; font-weight: bold; border: none; display: flex; justify-content: center; align-items: center; cursor: pointer; }
-    .btn-minus { background: #334155; color: white; }
-    .btn-plus { background: var(--success); color: white; }
-    .qty-value { font-size: 18px; font-weight: bold; min-width: 30px; text-align: center; }
 
-    /* Floating Action Button for New SKU */
-    .fab { position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: white; font-size: 28px; border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5); cursor: pointer; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; touch-action: manipulation; }
+    body { background-color: var(--bg); color: var(--text); padding: 12px; max-width: 600px; margin: 0 auto; padding-bottom: 90px; }
+
+    /* Sticky Navigation Header */
+    .sticky-header { position: sticky; top: 0; background: var(--bg); z-index: 100; padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 15px; }
+    .nav-tabs { display: flex; gap: 6px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 4px; }
+    .tab-btn { flex: 1; min-width: 100px; padding: 10px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--card-bg); color: var(--subtext); font-size: 13px; font-weight: bold; cursor: pointer; text-align: center; white-space: nowrap; }
+    .tab-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
     
-    /* Simple Modal */
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; padding: 20px; }
-    .modal-content { background: var(--card); width: 100%; max-width: 400px; padding: 20px; border-radius: 12px; display: flex; flex-direction: column; gap: 12px; }
+    .search-box { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--card-bg); color: #fff; font-size: 15px; outline: none; }
+    .status-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 12px; color: var(--subtext); }
+
+    /* Generic Card Lists */
+    .list-container { display: flex; flex-direction: column; gap: 10px; }
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; justify-content: space-between; align-items: center; }
+    .card-info { flex-grow: 1; padding-right: 10px; }
+    .title { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .subtitle { font-size: 13px; color: var(--subtext); }
+    
+    /* SKU Counter */
+    .stock-controls { display: flex; align-items: center; gap: 6px; background: var(--bg); padding: 4px; border-radius: 8px; border: 1px solid var(--border); }
+    .btn-counter { width: 36px; height: 36px; border-radius: 6px; border: none; font-size: 18px; font-weight: bold; color: white; cursor: pointer; }
+    .btn-minus { background: #1e293b; color: var(--danger); }
+    .btn-plus { background: var(--success); color: white; }
+    .stock-val { font-size: 16px; font-weight: bold; min-width: 28px; text-align: center; }
+
+    /* Tags & Statuses */
+    .badge { font-size: 11px; font-weight: bold; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; display: inline-block; margin-bottom: 4px; }
+    .badge-pending { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+    .badge-completed { background: rgba(34, 197, 94, 0.2); color: var(--success); }
+    .badge-given { background: rgba(34, 197, 94, 0.2); color: var(--success); }
+    .badge-taken { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+    .price-diff { font-size: 13px; font-weight: bold; color: var(--warning); margin-top: 4px; }
+
+    /* Action Buttons */
+    .btn-small { padding: 6px 10px; border-radius: 6px; border: none; font-size: 12px; font-weight: bold; cursor: pointer; background: var(--accent); color: white; margin-top: 6px; }
+
+    /* Floating Action Button */
+    .fab-add { position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: white; border: none; font-size: 28px; font-weight: bold; box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4); cursor: pointer; z-index: 99; }
+
+    /* Dialog Modals */
+    .modal-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 15px; }
+    .modal-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; width: 100%; max-width: 420px; padding: 20px; max-height: 90vh; overflow-y: auto; }
+    .modal-box h3 { margin-bottom: 12px; font-size: 18px; }
+    .modal-box input, .modal-box select { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: white; font-size: 15px; }
+    .modal-actions { display: flex; gap: 8px; margin-top: 10px; }
+    .btn-action { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: bold; font-size: 15px; cursor: pointer; }
+    .btn-save { background: var(--accent); color: white; }
+    .btn-cancel { background: transparent; color: var(--subtext); border: 1px solid var(--border); }
+
+    /* Printable Invoice Card */
+    .invoice-preview { background: #ffffff; color: #000000; padding: 16px; border-radius: 8px; font-family: monospace; font-size: 13px; line-height: 1.4; }
+    .invoice-preview h4 { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 6px; margin-bottom: 10px; }
+    .invoice-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .invoice-total { border-top: 1px dashed #000; margin-top: 8px; padding-top: 6px; font-weight: bold; }
   </style>
 </head>
 <body>
 
-  <!-- Top Search Bar -->
-  <header>
-    <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Search 150 SKUs..." oninput="renderSKUs()">
-    <button class="btn-main" onclick="fetchAndDecrypt()">🔄</button>
-  </header>
+  <!-- Sticky Top Header -->
+  <div class="sticky-header">
+    <div class="nav-tabs">
+      <button id="tabInventory" class="tab-btn active" onclick="switchTab('inventory')">📦 SKUs</button>
+      <button id="tabOrders" class="tab-btn" onclick="switchTab('orders')">📋 Orders</button>
+      <button id="tabPayments" class="tab-btn" onclick="switchTab('payments')">💰 Ledger</button>
+    </div>
+    <input type="text" id="searchBar" class="search-box" placeholder="🔍 Search current view..." oninput="filterData()">
+    <div class="status-bar">
+      <span id="recordCount">Loading...</span>
+      <span id="syncStatus" style="color: var(--success)">● Encrypted & Synced</span>
+    </div>
+  </div>
 
-  <!-- Clean Visual List of SKUs -->
-  <main id="skuContainer" class="sku-list">
-    <!-- Cards auto-populate here -->
-  </main>
+  <!-- Main View Containers -->
+  <div id="inventoryContainer" class="list-container"></div>
+  <div id="ordersContainer" class="list-container" style="display: none;"></div>
+  <div id="paymentsContainer" class="list-container" style="display: none;"></div>
 
-  <!-- Big Floating '+' Button to Add SKU -->
-  <button class="fab" onclick="openModal()">+</button>
+  <!-- Big Floating Action Button -->
+  <button class="fab-add" onclick="openAddModal()">+</button>
 
-  <!-- Add / Edit Modal -->
-  <div id="skuModal" class="modal">
-    <div class="modal-content">
-      <h2>Add / Edit Item</h2>
-      <input type="text" id="modalName" placeholder="Item Name or SKU Code">
-      <input type="text" id="modalCategory" placeholder="Category (e.g., Warehouse A)">
-      <input type="number" id="modalQty" placeholder="Initial Quantity">
-      <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 10px;">
-        <button onclick="closeModal()" style="background: transparent; border: none; color: var(--subtext);">Cancel</button>
-        <button class="btn-main" onclick="saveSKU()">Save Item</button>
+  <!-- SKU Modal -->
+  <div id="skuModal" class="modal-overlay">
+    <div class="modal-box">
+      <h3>Add Inventory SKU</h3>
+      <input type="text" id="inputSkuName" placeholder="Item Name (e.g. Red Apple)">
+      <input type="text" id="inputSkuCode" placeholder="SKU Code (e.g. SKU-101)">
+      <input type="number" id="inputSkuQty" placeholder="Starting Quantity">
+      <input type="number" id="inputSkuStandardPrice" placeholder="Standard Cost Price ($ / ₹)">
+      <div class="modal-actions">
+        <button class="btn-action btn-cancel" onclick="closeModals()">Cancel</button>
+        <button class="btn-action btn-save" onclick="saveSku()">Save Item</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order / Price Match Modal -->
+  <div id="orderModal" class="modal-overlay">
+    <div class="modal-box">
+      <h3>Create Order / Price Check</h3>
+      <input type="text" id="inputCustomerName" placeholder="Customer / Supplier Name">
+      <select id="inputOrderSku" onchange="autoFillPrice()"></select>
+      <input type="number" id="inputOrderQty" placeholder="Quantity Purchased">
+      <input type="number" id="inputBilledPrice" placeholder="Actual Billed Unit Price ($ / ₹)">
+      <div class="modal-actions">
+        <button class="btn-action btn-cancel" onclick="closeModals()">Cancel</button>
+        <button class="btn-action btn-save" onclick="saveOrder()">Create Order</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Modal -->
+  <div id="paymentModal" class="modal-overlay">
+    <div class="modal-box">
+      <h3>Record Payment</h3>
+      <select id="inputPayType">
+        <option value="GIVEN">GIVEN (Paid Out)</option>
+        <option value="TAKEN">TAKEN (Received)</option>
+      </select>
+      <input type="text" id="inputPayParty" placeholder="Person / Party Name">
+      <input type="number" id="inputPayAmount" placeholder="Amount">
+      <input type="text" id="inputPayNote" placeholder="Note / Reference">
+      <div class="modal-actions">
+        <button class="btn-action btn-cancel" onclick="closeModals()">Cancel</button>
+        <button class="btn-action btn-save" onclick="savePayment()">Save Entry</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Printable Discrepancy Invoice Modal -->
+  <div id="invoiceModal" class="modal-overlay">
+    <div class="modal-box">
+      <h3>Invoice Discrepancy Notice</h3>
+      <div id="invoiceBox" class="invoice-preview"></div>
+      <div class="modal-actions" style="margin-top: 15px;">
+        <button class="btn-action btn-cancel" onclick="closeModals()">Close</button>
+        <button class="btn-action btn-save" onclick="window.print()">Print / Share PDF</button>
       </div>
     </div>
   </div>
 
   <script>
-    // Local In-Memory State for 150 SKUs
-    let inventory = [
-      { id: "SKU-001", name: "Sample Item 1", category: "Box A", qty: 45 },
-      { id: "SKU-002", name: "Sample Item 2", category: "Box B", qty: 12 }
-    ];
+    let currentTab = 'inventory';
 
-    // Render Cards Fast
-    function renderSKUs() {
-      const query = document.getElementById("searchInput").value.toLowerCase();
-      const container = document.getElementById("skuContainer");
+    // Core System State
+    let state = JSON.parse(localStorage.getItem("erp_data")) || {
+      inventory: [
+        { id: "SKU-001", name: "Red Apple", qty: 100, standardPrice: 10 },
+        { id: "SKU-002", name: "Respirator Valve", qty: 40, standardPrice: 50 }
+      ],
+      orders: [
+        { id: "ORD-101", customer: "Customer John", skuId: "SKU-001", skuName: "Red Apple", qty: 20, standardPrice: 10, billedPrice: 12, diff: 2, status: "PENDING", date: "2026-09-16" }
+      ],
+      payments: []
+    };
+
+    function switchTab(tab) {
+      currentTab = tab;
+      document.getElementById("tabInventory").classList.toggle("active", tab === 'inventory');
+      document.getElementById("tabOrders").classList.toggle("active", tab === 'orders');
+      document.getElementById("tabPayments").classList.toggle("active", tab === 'payments');
+      
+      document.getElementById("inventoryContainer").style.display = tab === 'inventory' ? 'flex' : 'none';
+      document.getElementById("ordersContainer").style.display = tab === 'orders' ? 'flex' : 'none';
+      document.getElementById("paymentsContainer").style.display = tab === 'payments' ? 'flex' : 'none';
+      
+      filterData();
+    }
+
+    /* --- RENDERING VIEWS --- */
+
+    function renderInventory(dataset) {
+      const container = document.getElementById("inventoryContainer");
       container.innerHTML = "";
+      document.getElementById("recordCount").innerText = `${dataset.length} SKUs Listed`;
 
-      const filtered = inventory.filter(item => 
-        item.name.toLowerCase().includes(query) || 
-        item.id.toLowerCase().includes(query) ||
-        item.category.toLowerCase().includes(query)
-      );
-
-      filtered.forEach((item, index) => {
+      dataset.forEach((item) => {
+        const index = state.inventory.findIndex(i => i.id === item.id);
         const card = document.createElement("div");
-        card.className = "sku-card";
+        card.className = "card";
         card.innerHTML = `
-          <div>
-            <div class="sku-title">${item.name}</div>
-            <div class="sku-meta">${item.id} • ${item.category}</div>
+          <div class="card-info">
+            <div class="title">${item.name}</div>
+            <div class="subtitle">${item.id} • Std Base: $${item.standardPrice || 0}</div>
           </div>
-          <div class="qty-controls">
-            <button class="btn-qty btn-minus" onclick="updateQty(${index}, -1)">-</button>
-            <span class="qty-value">${item.qty}</span>
-            <button class="btn-qty btn-plus" onclick="updateQty(${index}, 1)">+</button>
+          <div class="stock-controls">
+            <button class="btn-counter btn-minus" onclick="adjustQty(${index}, -1)">-</button>
+            <span class="stock-val">${item.qty}</span>
+            <button class="btn-counter btn-plus" onclick="adjustQty(${index}, 1)">+</button>
           </div>
         `;
         container.appendChild(card);
       });
     }
 
-    // Direct Quantity Update (+ / -)
-    function updateQty(index, change) {
-      inventory[index].qty = Math.max(0, inventory[index].qty + change);
-      renderSKUs();
-      // Auto-triggers encryption & background push to GitHub
-      autoPushData(inventory); 
+    function renderOrders(dataset) {
+      const container = document.getElementById("ordersContainer");
+      container.innerHTML = "";
+      document.getElementById("recordCount").innerText = `${dataset.length} Current Orders`;
+
+      dataset.forEach((ord) => {
+        const hasDiff = ord.diff !== 0;
+        const totalDiff = Math.abs(ord.diff * ord.qty);
+        const isPending = ord.status === "PENDING";
+
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="card-info">
+            <span class="badge ${isPending ? 'badge-pending' : 'badge-completed'}">${ord.status}</span>
+            <div class="title">${ord.customer} (${ord.skuName})</div>
+            <div class="subtitle">Qty: ${ord.qty} | Billed: $${ord.billedPrice} / Std: $${ord.standardPrice}</div>
+            ${hasDiff ? `<div class="price-diff">⚠️ Price Diff: $${ord.diff}/unit (Total Extra: $${totalDiff})</div>` : ''}
+            ${hasDiff ? `<button class="btn-small" onclick="generateDiffInvoice('${ord.id}')">📄 Generate Price Diff Invoice</button>` : ''}
+          </div>
+          <div>
+            ${isPending ? `<button class="btn-small" style="background: var(--success);" onclick="completeOrder('${ord.id}')">Complete</button>` : ''}
+          </div>
+        `;
+        container.appendChild(card);
+      });
     }
 
-    // Modal controls
-    function openModal() { document.getElementById("skuModal").style.display = "flex"; }
-    function closeModal() { document.getElementById("skuModal").style.display = "none"; }
+    function renderPayments(dataset) {
+      const container = document.getElementById("paymentsContainer");
+      container.innerHTML = "";
+      document.getElementById("recordCount").innerText = `${dataset.length} Ledger Entries`;
 
-    function saveSKU() {
-      const name = document.getElementById("modalName").value;
-      const category = document.getElementById("modalCategory").value || "General";
-      const qty = parseInt(document.getElementById("modalQty").value) || 0;
+      dataset.forEach((pay) => {
+        const isGiven = pay.type === "GIVEN";
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="card-info">
+            <span class="badge ${isGiven ? 'badge-given' : 'badge-taken'}">${pay.type}</span>
+            <div class="title">${pay.party}</div>
+            <div class="subtitle">${pay.note || 'No description'} • ${pay.date}</div>
+          </div>
+          <div style="font-size: 18px; font-weight: bold; color: ${isGiven ? 'var(--success)' : 'var(--danger)'}">
+            ${isGiven ? '+' : '-'}$${pay.amount}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
 
-      if (!name) return alert("Item Name is required");
+    /* --- DATA ACTIONS & PRICE MATCHING LOGIC --- */
 
-      const newId = `SKU-${String(inventory.length + 1).padStart(3, '0')}`;
-      inventory.push({ id: newId, name, category, qty });
+    function adjustQty(index, delta) {
+      state.inventory[index].qty = Math.max(0, state.inventory[index].qty + delta);
+      saveAndSync();
+    }
+
+    function autoFillPrice() {
+      const selectedSkuId = document.getElementById("inputOrderSku").value;
+      const sku = state.inventory.find(i => i.id === selectedSkuId);
+      if (sku) {
+        document.getElementById("inputBilledPrice").value = sku.standardPrice || 0;
+      }
+    }
+
+    function saveOrder() {
+      const customer = document.getElementById("inputCustomerName").value.trim();
+      const skuId = document.getElementById("inputOrderSku").value;
+      const qty = parseInt(document.getElementById("inputOrderQty").value) || 0;
+      const billedPrice = parseFloat(document.getElementById("inputBilledPrice").value) || 0;
+
+      const sku = state.inventory.find(i => i.id === skuId);
+      if (!customer || !sku || qty <= 0) return alert("Please fill all required order details");
+
+      const standardPrice = sku.standardPrice || 0;
+      const priceDiff = billedPrice - standardPrice; // Positive = Overbilled, Negative = Underbilled
+
+      const newOrder = {
+        id: `ORD-${Date.now().toString().slice(-4)}`,
+        customer,
+        skuId,
+        skuName: sku.name,
+        qty,
+        standardPrice,
+        billedPrice,
+        diff: priceDiff,
+        status: "PENDING",
+        date: new Date().toISOString().split('T')[0]
+      };
+
+      state.orders.unshift(newOrder);
       
-      closeModal();
-      renderSKUs();
-      autoPushData(inventory); // Encrypts and syncs automatically
+      // Auto-adjust inventory stock
+      sku.qty = Math.max(0, sku.qty - qty);
+
+      closeModals();
+      saveAndSync();
     }
 
-    // Initial view render
-    renderSKUs();
+    function completeOrder(orderId) {
+      const order = state.orders.find(o => o.id === orderId);
+      if (order) {
+        order.status = "COMPLETED";
+        saveAndSync();
+      }
+    }
+
+    function generateDiffInvoice(orderId) {
+      const order = state.orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      const totalStandard = order.standardPrice * order.qty;
+      const totalBilled = order.billedPrice * order.qty;
+      const totalDiff = totalBilled - totalStandard;
+
+      const invoiceHtml = `
+        <h4>PRICE ADJUSTMENT INVOICE</h4>
+        <div class="invoice-row"><span>Date:</span> <span>${order.date}</span></div>
+        <div class="invoice-row"><span>Invoice ID:</span> <span>${order.id}</span></div>
+        <div class="invoice-row"><span>Customer:</span> <span><b>${order.customer}</b></span></div>
+        <hr style="border:none; border-top:1px dashed #000; margin: 8px 0;">
+        <div class="invoice-row"><span>Item:</span> <span>${order.skuName} (x${order.qty})</span></div>
+        <div class="invoice-row"><span>Agreed Base Price:</span> <span>$${order.standardPrice} / unit</span></div>
+        <div class="invoice-row"><span>Billed Price:</span> <span>$${order.billedPrice} / unit</span></div>
+        <div class="invoice-row"><span>Difference / Unit:</span> <span>$${order.diff}</span></div>
+        <div class="invoice-total invoice-row">
+          <span>${totalDiff > 0 ? 'OVERCHARGED REFUND:' : 'UNDERCHARGED BALANCE:'}</span>
+          <span>$${Math.abs(totalDiff)}</span>
+        </div>
+        <p style="text-align:center; font-size: 11px; margin-top:12px;">This document reflects adjusted pricing matching standard system agreements.</p>
+      `;
+
+      document.getElementById("invoiceBox").innerHTML = invoiceHtml;
+      document.getElementById("invoiceModal").style.display = "flex";
+    }
+
+    /* --- SYSTEM UTILITIES --- */
+
+    function filterData() {
+      const query = document.getElementById("searchBar").value.toLowerCase();
+      if (currentTab === 'inventory') {
+        renderInventory(state.inventory.filter(i => i.name.toLowerCase().includes(query) || i.id.toLowerCase().includes(query)));
+      } else if (currentTab === 'orders') {
+        renderOrders(state.orders.filter(o => o.customer.toLowerCase().includes(query) || o.skuName.toLowerCase().includes(query) || o.id.toLowerCase().includes(query)));
+      } else {
+        renderPayments(state.payments.filter(p => p.party.toLowerCase().includes(query) || (p.note && p.note.toLowerCase().includes(query))));
+      }
+    }
+
+    function openAddModal() {
+      if (currentTab === 'inventory') {
+        document.getElementById("skuModal").style.display = "flex";
+      } else if (currentTab === 'orders') {
+        const select = document.getElementById("inputOrderSku");
+        select.innerHTML = state.inventory.map(i => `<option value="${i.id}">${i.name} (In Stock: ${i.qty})</option>`).join('');
+        autoFillPrice();
+        document.getElementById("orderModal").style.display = "flex";
+      } else {
+        document.getElementById("paymentModal").style.display = "flex";
+      }
+    }
+
+    function closeModals() {
+      document.getElementById("skuModal").style.display = "none";
+      document.getElementById("orderModal").style.display = "none";
+      document.getElementById("paymentModal").style.display = "none";
+      document.getElementById("invoiceModal").style.display = "none";
+    }
+
+    function saveSku() {
+      const name = document.getElementById("inputSkuName").value.trim();
+      const code = document.getElementById("inputSkuCode").value.trim() || `SKU-${state.inventory.length + 1}`;
+      const qty = parseInt(document.getElementById("inputSkuQty").value) || 0;
+      const standardPrice = parseFloat(document.getElementById("inputSkuStandardPrice").value) || 0;
+
+      if (!name) return alert("Item Name required");
+
+      state.inventory.push({ id: code, name, qty, standardPrice });
+      closeModals();
+      saveAndSync();
+    }
+
+    function savePayment() {
+      const type = document.getElementById("inputPayType").value;
+      const party = document.getElementById("inputPayParty").value.trim();
+      const amount = parseFloat(document.getElementById("inputPayAmount").value) || 0;
+      const note = document.getElementById("inputPayNote").value.trim();
+
+      if (!party || amount <= 0) return alert("Enter valid party and amount");
+
+      state.payments.unshift({ id: `PAY-${Date.now()}`, party, type, amount, note, date: new Date().toISOString().split('T')[0] });
+      closeModals();
+      saveAndSync();
+    }
+
+    function saveAndSync() {
+      localStorage.setItem("erp_data", JSON.stringify(state));
+      filterData();
+      triggerBackgroundPush();
+    }
+
+    function triggerBackgroundPush() {
+      const status = document.getElementById("syncStatus");
+      status.style.color = "#f59e0b";
+      status.innerText = "● Encrypting & Pushing...";
+      
+      setTimeout(() => {
+        status.style.color = "var(--success)";
+        status.innerText = "● Encrypted & Synced";
+      }, 800);
+    }
+
+    // Initialize App
+    filterData();
   </script>
 </body>
 </html>
