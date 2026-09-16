@@ -3,183 +3,435 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Zero-Knowledge Mobile ERP</title>
+  <title>AUREUS Zero-Knowledge Executive ERP</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
     :root {
-      --bg: #0b0f19;
-      --card-bg: #111827;
-      --card-border: #1f293d;
-      --accent: #2563eb;
-      --accent-glow: rgba(37, 99, 235, 0.35);
-      --text: #f9fafb;
-      --subtext: #9ca3af;
-      --success: #10b981;
-      --danger: #ef4444;
-      --warning: #f59e0b;
+      --bg-base: #030508;
+      --card-bg: rgba(13, 18, 28, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --glass-glow: rgba(59, 130, 246, 0.15);
+      
+      --gold-primary: #d97706;
+      --gold-glow: rgba(217, 119, 6, 0.35);
+      --emerald-accent: #10b981;
+      --emerald-glow: rgba(16, 185, 129, 0.25);
+      --crimson-accent: #f43f5e;
+      --indigo-accent: #6366f1;
+      
+      --text-main: #f8fafc;
+      --text-muted: #64748b;
+      --text-dim: #475569;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; touch-action: manipulation; }
-    body { background-color: var(--bg); color: var(--text); padding: 12px; max-width: 600px; margin: 0 auto; padding-bottom: 90px; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
+    
+    body {
+      background-color: var(--bg-base);
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(217, 119, 6, 0.06) 0%, transparent 40%);
+      background-attachment: fixed;
+      color: var(--text-main);
+      padding: 16px;
+      max-width: 520px;
+      margin: 0 auto;
+      padding-bottom: 100px;
+      min-height: 100vh;
+    }
 
-    /* Strict Password Overlay */
-    #authOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background: #070a12; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
-    .auth-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 28px; width: 100%; max-width: 360px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-    .auth-card h2 { font-size: 20px; margin-bottom: 6px; }
-    .auth-card p { font-size: 13px; color: var(--subtext); margin-bottom: 18px; }
-    .auth-card input { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid var(--card-border); background: var(--bg); color: #fff; font-size: 18px; text-align: center; margin-bottom: 14px; outline: none; }
+    /* Ambient Glow Headers */
+    .brand-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 4px 16px 4px;
+    }
+    .brand-title {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-badge {
+      font-size: 9px;
+      letter-spacing: 1.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 20px;
+      background: rgba(217, 119, 6, 0.15);
+      color: var(--gold-primary);
+      border: 1px solid rgba(217, 119, 6, 0.3);
+    }
 
-    /* Main App Interface */
+    /* Absolute Lock Overlay */
+    #authOverlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: #020408;
+      background-image: radial-gradient(circle at 50% 30%, rgba(99, 102, 241, 0.12) 0%, transparent 60%);
+      z-index: 99999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+    }
+    .vault-card {
+      background: rgba(10, 15, 26, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 36px 28px;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 40px rgba(99, 102, 241, 0.1);
+    }
+    .vault-icon {
+      width: 56px; height: 56px; border-radius: 18px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01));
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px auto; font-size: 24px;
+    }
+    .vault-card h2 { font-size: 22px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.5px; }
+    .vault-card p { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+    
+    .pass-input {
+      width: 100%;
+      padding: 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(3, 5, 8, 0.8);
+      color: #fff;
+      font-size: 20px;
+      font-family: 'JetBrains Mono', monospace;
+      text-align: center;
+      margin-bottom: 18px;
+      outline: none;
+      letter-spacing: 4px;
+      transition: all 0.3s ease;
+    }
+    .pass-input:focus { border-color: var(--indigo-accent); box-shadow: 0 0 20px rgba(99, 102, 241, 0.25); }
+
+    /* Navigation Glass Bar */
     #appContent { display: none; }
-    .sticky-header { position: sticky; top: 0; background: rgba(11, 15, 25, 0.95); backdrop-filter: blur(8px); z-index: 100; padding-bottom: 10px; border-bottom: 1px solid var(--card-border); margin-bottom: 15px; }
-    .nav-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
-    .tab-btn { flex: 1; padding: 12px 8px; border-radius: 10px; border: 1px solid var(--card-border); background: var(--card-bg); color: var(--subtext); font-size: 13px; font-weight: bold; cursor: pointer; text-align: center; }
-    .tab-btn.active { background: var(--accent); color: white; border-color: var(--accent); box-shadow: 0 4px 12px var(--accent-glow); }
+    .sticky-nav {
+      position: sticky;
+      top: 12px;
+      z-index: 100;
+      background: rgba(10, 15, 26, 0.8);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 6px;
+      margin-bottom: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+    .tab-group { display: flex; gap: 4px; }
+    .tab-item {
+      flex: 1;
+      padding: 12px 6px;
+      border-radius: 12px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.25s ease;
+    }
+    .tab-item.active {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03));
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Global Search Terminal Field */
+    .terminal-search {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid var(--card-border);
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+      margin-bottom: 14px;
+      transition: border 0.3s ease;
+    }
+    .terminal-search:focus { border-color: rgba(255, 255, 255, 0.25); }
+
+    .status-strip {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0 4px 12px 4px; font-size: 11px; font-weight: 600;
+      color: var(--text-muted); letter-spacing: 0.5px; text-transform: uppercase;
+    }
+
+    /* Executive Glass Cards */
+    .card-list { display: flex; flex-direction: column; gap: 12px; }
+    .exec-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .exec-card:active { transform: scale(0.98); }
     
-    .search-box { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--card-border); background: var(--card-bg); color: #fff; font-size: 15px; outline: none; }
-    .status-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 12px; color: var(--subtext); }
+    .card-meta { flex-grow: 1; padding-right: 12px; }
+    .card-title { font-size: 15px; font-weight: 700; color: #fff; letter-spacing: -0.2px; margin-bottom: 4px; }
+    .card-sub { font-size: 12px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
 
-    /* List Display Cards */
-    .list-container { display: flex; flex-direction: column; gap: 10px; }
-    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 14px; display: flex; justify-content: space-between; align-items: center; }
-    .card-info { flex-grow: 1; padding-right: 10px; }
-    .title { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 3px; }
-    .subtitle { font-size: 13px; color: var(--subtext); }
+    /* Counter Control Pill */
+    .pill-counter {
+      display: flex; align-items: center; gap: 4px;
+      background: rgba(3, 5, 8, 0.6);
+      padding: 4px; border-radius: 12px;
+      border: 1px solid var(--card-border);
+    }
+    .btn-counter {
+      width: 36px; height: 36px; border-radius: 8px; border: none;
+      font-size: 16px; font-weight: 700; color: white; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s ease;
+    }
+    .btn-counter-minus { background: rgba(244, 63, 94, 0.15); color: var(--crimson-accent); border: 1px solid rgba(244, 63, 94, 0.2); }
+    .btn-counter-plus { background: rgba(16, 185, 129, 0.15); color: var(--emerald-accent); border: 1px solid rgba(16, 185, 129, 0.2); }
+    .counter-val { font-size: 15px; font-weight: 700; min-width: 32px; text-align: center; font-family: 'JetBrains Mono', monospace; }
+
+    /* Custom Badges */
+    .status-tag {
+      font-size: 9px; font-weight: 800; padding: 3px 8px; border-radius: 6px;
+      text-transform: uppercase; letter-spacing: 0.8px; display: inline-block; margin-bottom: 6px;
+    }
+    .tag-pending { background: rgba(217, 119, 6, 0.15); color: #f59e0b; border: 1px solid rgba(217, 119, 6, 0.3); }
+    .tag-complete { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .tag-receivable { background: rgba(244, 63, 94, 0.15); color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.3); }
+    .tag-payable { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+
+    .variance-alert { font-size: 11px; font-weight: 700; color: #f59e0b; font-family: 'JetBrains Mono', monospace; margin-top: 6px; }
+
+    /* Action Buttons */
+    .btn-action-main {
+      width: 100%; padding: 16px; border-radius: 14px; border: none;
+      font-weight: 700; font-size: 14px; letter-spacing: 0.5px; cursor: pointer;
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      color: white; box-shadow: 0 8px 25px rgba(37, 99, 235, 0.35);
+      transition: all 0.2s ease;
+    }
+    .btn-action-main:active { transform: scale(0.98); }
+
+    .btn-ghost-small {
+      padding: 8px 12px; border-radius: 8px; border: 1px solid var(--card-border);
+      font-size: 11px; font-weight: 700; cursor: pointer;
+      background: rgba(255, 255, 255, 0.05); color: #fff; margin-top: 8px;
+    }
+
+    /* Floating Executive Command Trigger */
+    .fab-trigger {
+      position: fixed; bottom: 24px; right: 24px; width: 62px; height: 62px;
+      border-radius: 20px; background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+      color: white; border: 1px solid rgba(255, 255, 255, 0.2);
+      font-size: 28px; font-weight: 300;
+      box-shadow: 0 12px 30px var(--gold-glow); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; z-index: 99;
+      transition: transform 0.2s ease;
+    }
+    .fab-trigger:active { transform: scale(0.92); }
+
+    /* High-End Executive Modals */
+    .sheet-overlay {
+      display: none; position: fixed; top:0; left:0; width:100%; height:100%;
+      background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(12px);
+      z-index: 10000; justify-content: center; align-items: center; padding: 20px;
+    }
+    .sheet-card {
+      background: rgba(13, 18, 28, 0.95); border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 24px; width: 100%; max-width: 440px; padding: 28px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9); max-height: 90vh; overflow-y: auto;
+    }
+    .sheet-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 18px; letter-spacing: -0.3px; }
     
-    /* SKU Counter Controls */
-    .stock-controls { display: flex; align-items: center; gap: 6px; background: var(--bg); padding: 4px; border-radius: 10px; border: 1px solid var(--card-border); }
-    .btn-counter { width: 38px; height: 38px; border-radius: 8px; border: none; font-size: 18px; font-weight: bold; color: white; cursor: pointer; }
-    .btn-minus { background: #1e293b; color: var(--danger); }
-    .btn-plus { background: var(--success); color: white; }
-    .stock-val { font-size: 16px; font-weight: bold; min-width: 30px; text-align: center; }
+    .field-group { margin-bottom: 14px; }
+    .field-label { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; display: block; }
+    
+    .sheet-card input, .sheet-card select {
+      width: 100%; padding: 14px; border-radius: 12px;
+      border: 1px solid var(--card-border); background: rgba(3, 5, 8, 0.7);
+      color: #fff; font-size: 14px; outline: none; transition: border 0.2s ease;
+    }
+    .sheet-card input:focus { border-color: rgba(255, 255, 255, 0.3); }
 
-    /* Badges */
-    .badge { font-size: 10px; font-weight: bold; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; display: inline-block; margin-bottom: 4px; }
-    .badge-pending { background: rgba(245, 158, 11, 0.15); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.3); }
-    .badge-completed { background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
-    .badge-receivable { background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
-    .badge-payable { background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
-    .price-diff { font-size: 12px; font-weight: bold; color: var(--warning); margin-top: 4px; }
+    .sheet-actions { display: flex; gap: 10px; margin-top: 20px; }
+    .btn-sheet-cancel {
+      flex: 1; padding: 14px; border-radius: 12px; border: 1px solid var(--card-border);
+      background: transparent; color: var(--text-muted); font-weight: 700; font-size: 13px; cursor: pointer;
+    }
 
-    .btn-primary { width: 100%; padding: 12px; border-radius: 10px; border: none; font-weight: bold; font-size: 15px; cursor: pointer; background: var(--accent); color: white; box-shadow: 0 4px 12px var(--accent-glow); }
-    .btn-small { padding: 6px 12px; border-radius: 8px; border: none; font-size: 12px; font-weight: bold; cursor: pointer; background: var(--accent); color: white; margin-top: 6px; }
-    .fab-add { position: fixed; bottom: 20px; right: 20px; width: 58px; height: 58px; border-radius: 50%; background: var(--accent); color: white; border: none; font-size: 30px; font-weight: bold; box-shadow: 0 8px 20px var(--accent-glow); cursor: pointer; z-index: 99; }
-
-    /* Simplified Quick Modals */
-    .modal-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 15px; }
-    .modal-box { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; width: 100%; max-width: 420px; padding: 22px; max-height: 90vh; overflow-y: auto; }
-    .modal-box h3 { margin-bottom: 14px; font-size: 18px; }
-    .field-label { font-size: 12px; color: var(--subtext); margin-bottom: 4px; display: block; }
-    .modal-box input, .modal-box select { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 8px; border: 1px solid var(--card-border); background: var(--bg); color: white; font-size: 15px; outline: none; }
-    .modal-actions { display: flex; gap: 10px; margin-top: 10px; }
-    .btn-cancel { background: transparent; color: var(--subtext); border: 1px solid var(--card-border); flex: 1; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; }
-
-    /* Printable Invoice */
-    .invoice-preview { background: #ffffff; color: #000000; padding: 16px; border-radius: 8px; font-family: monospace; font-size: 13px; line-height: 1.4; }
-    .invoice-preview h4 { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 6px; margin-bottom: 10px; }
-    .invoice-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
-    .invoice-total { border-top: 1px dashed #000; margin-top: 8px; padding-top: 6px; font-weight: bold; }
+    /* Print Preview Docket */
+    .docket-box {
+      background: #ffffff; color: #090d16; padding: 20px; border-radius: 12px;
+      font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.5;
+    }
+    .docket-box h4 { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 12px; font-size: 13px; }
+    .docket-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .docket-total { border-top: 1px dashed #000; margin-top: 10px; padding-top: 8px; font-weight: bold; }
   </style>
 </head>
 <body>
 
-  <!-- Strict Lock Screen (No Reset Option) -->
+  <!-- Strict Lock Screen -->
   <div id="authOverlay">
-    <div class="auth-card">
-      <h2>🔒 Secure ERP</h2>
-      <p id="authSubtitle">Enter Master Password</p>
-      <input type="password" id="masterPasscode" placeholder="••••••••" autocomplete="off">
-      <button class="btn-primary" onclick="handleAuth()">Unlock</button>
+    <div class="vault-card">
+      <div class="vault-icon">🔑</div>
+      <h2>Terminal Vault</h2>
+      <p id="authSubtitle">Zero-Knowledge Master Decryption</p>
+      <input type="password" id="masterPasscode" class="pass-input" placeholder="••••" autocomplete="off">
+      <button class="btn-action-main" onclick="handleAuth()">DECRYPT TERMINAL</button>
     </div>
   </div>
 
-  <!-- Main App Interface -->
+  <!-- Authenticated Executive App Area -->
   <div id="appContent">
-    <div class="sticky-header">
-      <div class="nav-tabs">
-        <button id="tabInventory" class="tab-btn active" onclick="switchTab('inventory')">📦 SKUs</button>
-        <button id="tabOrders" class="tab-btn" onclick="switchTab('orders')">📋 Orders</button>
-        <button id="tabPayments" class="tab-btn" onclick="switchTab('payments')">💰 Ledger</button>
+    
+    <div class="brand-header">
+      <div class="brand-title">
+        <span>AUREUS</span>
+        <span class="brand-badge">ENCRYPTED</span>
       </div>
-      <input type="text" id="searchBar" class="search-box" placeholder="🔍 Quick search..." oninput="filterData()">
-      <div class="status-bar">
-        <span id="recordCount">Loading...</span>
-        <button class="btn-small" style="padding: 3px 8px; font-size: 11px; background: #1e293d;" onclick="lockApp()">🔒 Lock</button>
+      <button class="btn-ghost-small" style="margin:0; font-size: 10px;" onclick="lockApp()">🔒 LOCK</button>
+    </div>
+
+    <div class="sticky-nav">
+      <div class="tab-group">
+        <button id="tabInventory" class="tab-item active" onclick="switchTab('inventory')">📦 SKUs</button>
+        <button id="tabOrders" class="tab-item" onclick="switchTab('orders')">📋 ORDERS</button>
+        <button id="tabPayments" class="tab-item" onclick="switchTab('payments')">💰 LEDGER</button>
       </div>
     </div>
 
-    <div id="inventoryContainer" class="list-container"></div>
-    <div id="ordersContainer" class="list-container" style="display: none;"></div>
-    <div id="paymentsContainer" class="list-container" style="display: none;"></div>
+    <input type="text" id="searchBar" class="terminal-search" placeholder="🔍 Search database records..." oninput="filterData()">
 
-    <button class="fab-add" onclick="openAddModal()">+</button>
-  </div>
-
-  <!-- Streamlined SKU Form -->
-  <div id="skuModal" class="modal-overlay">
-    <div class="modal-box">
-      <h3>Quick Add SKU</h3>
-      <span class="field-label">Item Name</span>
-      <input type="text" id="inputSkuName" placeholder="e.g. Red Apple">
-      <span class="field-label">Standard Price ($ / ₹)</span>
-      <input type="number" id="inputSkuStandardPrice" placeholder="10">
-      <span class="field-label">Initial Stock</span>
-      <input type="number" id="inputSkuQty" placeholder="100">
-      <div class="modal-actions">
-        <button class="btn-cancel" onclick="closeModals()">Cancel</button>
-        <button class="btn-primary" style="flex:1" onclick="saveSku()">Save SKU</button>
-      </div>
+    <div class="status-strip">
+      <span id="recordCount">Loading...</span>
+      <span style="color: var(--emerald-accent)">AES-256 Active</span>
     </div>
+
+    <div id="inventoryContainer" class="card-list"></div>
+    <div id="ordersContainer" class="card-list" style="display: none;"></div>
+    <div id="paymentsContainer" class="card-list" style="display: none;"></div>
+
+    <button class="fab-trigger" onclick="openAddModal()">+</button>
   </div>
 
-  <!-- Streamlined Order / Price Matching Form -->
-  <div id="orderModal" class="modal-overlay">
-    <div class="modal-box">
-      <h3>Create Quick Order</h3>
-      <span class="field-label">Select Item</span>
-      <select id="inputOrderSku" onchange="autoFillPrice()"></select>
-      <span class="field-label">Customer / Party Name</span>
-      <input type="text" id="inputCustomerName" placeholder="e.g. John Doe">
-      <span class="field-label">Quantity</span>
-      <input type="number" id="inputOrderQty" value="1">
-      <span class="field-label">Actual Billed Unit Price</span>
-      <input type="number" id="inputBilledPrice" placeholder="10">
-      <div class="modal-actions">
-        <button class="btn-cancel" onclick="closeModals()">Cancel</button>
-        <button class="btn-primary" style="flex:1" onclick="saveOrder()">Create Order</button>
+  <!-- SKU Sheet Modal -->
+  <div id="skuModal" class="sheet-overlay">
+    <div class="sheet-card">
+      <h3>Add New SKU Item</h3>
+      <div class="field-group">
+        <span class="field-label">Item Identifier Name</span>
+        <input type="text" id="inputSkuName" placeholder="e.g. Red Apple Grade A">
+      </div>
+      <div class="field-group">
+        <span class="field-label">Base Cost Price</span>
+        <input type="number" id="inputSkuStandardPrice" placeholder="10.00">
+      </div>
+      <div class="field-group">
+        <span class="field-label">Initial Stock Level</span>
+        <input type="number" id="inputSkuQty" placeholder="100">
+      </div>
+      <div class="sheet-actions">
+        <button class="btn-sheet-cancel" onclick="closeModals()">Cancel</button>
+        <button class="btn-action-main" style="flex:1.5" onclick="saveSku()">Save SKU Item</button>
       </div>
     </div>
   </div>
 
-  <!-- Streamlined Ledger Form -->
-  <div id="paymentModal" class="modal-overlay">
-    <div class="modal-box">
-      <h3>Add Ledger Entry</h3>
-      <span class="field-label">Transaction Type</span>
-      <select id="inputPayType">
-        <option value="RECEIVABLE">AMOUNT RECEIVABLE (Owed to You)</option>
-        <option value="PAYABLE">AMOUNT PAYABLE (You Owe Vendor)</option>
-      </select>
-      <span class="field-label">Party Name</span>
-      <input type="text" id="inputPayParty" placeholder="Customer or Vendor">
-      <span class="field-label">Amount</span>
-      <input type="number" id="inputPayAmount" placeholder="0.00">
-      <span class="field-label">Note / Invoice #</span>
-      <input type="text" id="inputPayNote" placeholder="Optional reference">
-      <div class="modal-actions">
-        <button class="btn-cancel" onclick="closeModals()">Cancel</button>
-        <button class="btn-primary" style="flex:1" onclick="savePayment()">Save Entry</button>
+  <!-- Order / Price Match Sheet Modal -->
+  <div id="orderModal" class="sheet-overlay">
+    <div class="sheet-card">
+      <h3>Create Transaction Order</h3>
+      <div class="field-group">
+        <span class="field-label">Target Inventory Item</span>
+        <select id="inputOrderSku" onchange="autoFillPrice()"></select>
+      </div>
+      <div class="field-group">
+        <span class="field-label">Customer / Party Name</span>
+        <input type="text" id="inputCustomerName" placeholder="Client Name">
+      </div>
+      <div class="field-group">
+        <span class="field-label">Quantity</span>
+        <input type="number" id="inputOrderQty" value="1">
+      </div>
+      <div class="field-group">
+        <span class="field-label">Actual Billed Rate</span>
+        <input type="number" id="inputBilledPrice" placeholder="0.00">
+      </div>
+      <div class="sheet-actions">
+        <button class="btn-sheet-cancel" onclick="closeModals()">Cancel</button>
+        <button class="btn-action-main" style="flex:1.5" onclick="saveOrder()">Create Order</button>
       </div>
     </div>
   </div>
 
-  <!-- Discrepancy Invoice Modal -->
-  <div id="invoiceModal" class="modal-overlay">
-    <div class="modal-box">
-      <h3>Price Variance Invoice</h3>
-      <div id="invoiceBox" class="invoice-preview"></div>
-      <div class="modal-actions" style="margin-top: 15px;">
-        <button class="btn-cancel" onclick="closeModals()">Close</button>
-        <button class="btn-primary" style="flex:1" onclick="window.print()">Print / Share PDF</button>
+  <!-- Ledger Sheet Modal -->
+  <div id="paymentModal" class="sheet-overlay">
+    <div class="sheet-card">
+      <h3>Add Ledger Transaction</h3>
+      <div class="field-group">
+        <span class="field-label">Ledger Classification</span>
+        <select id="inputPayType">
+          <option value="RECEIVABLE">AMOUNT RECEIVABLE (Owed to You)</option>
+          <option value="PAYABLE">AMOUNT PAYABLE (You Owe Vendor)</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <span class="field-label">Counterparty Name</span>
+        <input type="text" id="inputPayParty" placeholder="Customer or Supplier">
+      </div>
+      <div class="field-group">
+        <span class="field-label">Transaction Value</span>
+        <input type="number" id="inputPayAmount" placeholder="0.00">
+      </div>
+      <div class="field-group">
+        <span class="field-label">Reference Note</span>
+        <input type="text" id="inputPayNote" placeholder="Invoice reference / memo">
+      </div>
+      <div class="sheet-actions">
+        <button class="btn-sheet-cancel" onclick="closeModals()">Cancel</button>
+        <button class="btn-action-main" style="flex:1.5" onclick="savePayment()">Record Entry</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Invoice Discrepancy Docket Sheet -->
+  <div id="invoiceModal" class="sheet-overlay">
+    <div class="sheet-card">
+      <h3 style="margin-bottom: 12px;">Discrepancy Invoice Docket</h3>
+      <div id="invoiceBox" class="docket-box"></div>
+      <div class="sheet-actions" style="margin-top: 18px;">
+        <button class="btn-sheet-cancel" onclick="closeModals()">Close</button>
+        <button class="btn-action-main" style="flex:1.5" onclick="window.print()">Print / Share PDF</button>
       </div>
     </div>
   </div>
@@ -189,11 +441,11 @@
 
     let state = JSON.parse(localStorage.getItem("erp_data")) || {
       inventory: [
-        { id: "SKU-1", name: "Red Apple", qty: 100, standardPrice: 10 },
-        { id: "SKU-2", name: "Respirator Valve", qty: 40, standardPrice: 50 }
+        { id: "SKU-101", name: "Red Apple Grade A", qty: 150, standardPrice: 10 },
+        { id: "SKU-102", name: "High-Pressure Valve", qty: 45, standardPrice: 75 }
       ],
       orders: [
-        { id: "ORD-101", customer: "John Doe", skuId: "SKU-1", skuName: "Red Apple", qty: 20, standardPrice: 10, billedPrice: 12, diff: 2, status: "PENDING", date: "2026-09-16" }
+        { id: "ORD-901", customer: "John Doe Executive", skuId: "SKU-101", skuName: "Red Apple Grade A", qty: 25, standardPrice: 10, billedPrice: 12, diff: 2, status: "PENDING", date: "2026-09-16" }
       ],
       payments: []
     };
@@ -202,9 +454,9 @@
       const storedPass = localStorage.getItem("erp_passcode");
       const authSubtitle = document.getElementById("authSubtitle");
       if (!storedPass) {
-        authSubtitle.innerText = "Set your master password";
+        authSubtitle.innerText = "Set Zero-Knowledge Master Key";
       } else {
-        authSubtitle.innerText = "Enter master password to unlock";
+        authSubtitle.innerText = "Enter Master Password to Decrypt";
       }
     }
 
@@ -212,16 +464,16 @@
       const inputPass = document.getElementById("masterPasscode").value;
       const storedPass = localStorage.getItem("erp_passcode");
 
-      if (!inputPass) return alert("Please enter password");
+      if (!inputPass) return alert("Enter passcode");
 
       if (!storedPass) {
         localStorage.setItem("erp_passcode", inputPass);
-        alert("Password set successfully!");
+        alert("Master key set!");
         unlockUi();
       } else if (inputPass === storedPass) {
         unlockUi();
       } else {
-        alert("Incorrect Password!");
+        alert("Access Denied: Incorrect Master Password");
         document.getElementById("masterPasscode").value = "";
       }
     }
@@ -252,26 +504,26 @@
       filterData();
     }
 
-    /* --- RENDERING VIEWS --- */
+    /* --- VIEW RENDERING ENGINE --- */
 
     function renderInventory(dataset) {
       const container = document.getElementById("inventoryContainer");
       container.innerHTML = "";
-      document.getElementById("recordCount").innerText = `${dataset.length} Items Listed`;
+      document.getElementById("recordCount").innerText = `${dataset.length} Items Indexed`;
 
       dataset.forEach((item) => {
         const index = state.inventory.findIndex(i => i.id === item.id);
         const card = document.createElement("div");
-        card.className = "card";
+        card.className = "exec-card";
         card.innerHTML = `
-          <div class="card-info">
-            <div class="title">${item.name}</div>
-            <div class="subtitle">Base Price: $${item.standardPrice || 0}</div>
+          <div class="card-meta">
+            <div class="card-title">${item.name}</div>
+            <div class="card-sub">Base Price: $${item.standardPrice || 0}</div>
           </div>
-          <div class="stock-controls">
-            <button class="btn-counter btn-minus" onclick="adjustQty(${index}, -1)">-</button>
-            <span class="stock-val">${item.qty}</span>
-            <button class="btn-counter btn-plus" onclick="adjustQty(${index}, 1)">+</button>
+          <div class="pill-counter">
+            <button class="btn-counter btn-counter-minus" onclick="adjustQty(${index}, -1)">-</button>
+            <span class="counter-val">${item.qty}</span>
+            <button class="btn-counter btn-counter-plus" onclick="adjustQty(${index}, 1)">+</button>
           </div>
         `;
         container.appendChild(card);
@@ -281,7 +533,7 @@
     function renderOrders(dataset) {
       const container = document.getElementById("ordersContainer");
       container.innerHTML = "";
-      document.getElementById("recordCount").innerText = `${dataset.length} Orders`;
+      document.getElementById("recordCount").innerText = `${dataset.length} Active Orders`;
 
       dataset.forEach((ord) => {
         const hasDiff = ord.diff !== 0;
@@ -289,17 +541,17 @@
         const isPending = ord.status === "PENDING";
 
         const card = document.createElement("div");
-        card.className = "card";
+        card.className = "exec-card";
         card.innerHTML = `
-          <div class="card-info">
-            <span class="badge ${isPending ? 'badge-pending' : 'badge-completed'}">${ord.status}</span>
-            <div class="title">${ord.customer} (${ord.skuName})</div>
-            <div class="subtitle">Qty: ${ord.qty} | Billed: $${ord.billedPrice} / Base: $${ord.standardPrice}</div>
-            ${hasDiff ? `<div class="price-diff">⚠️ Price Diff: $${ord.diff}/unit (Total: $${totalDiff})</div>` : ''}
-            ${hasDiff ? `<button class="btn-small" onclick="generateDiffInvoice('${ord.id}')">📄 Share Invoice</button>` : ''}
+          <div class="card-meta">
+            <span class="status-tag ${isPending ? 'tag-pending' : 'tag-complete'}">${ord.status}</span>
+            <div class="card-title">${ord.customer} (${ord.skuName})</div>
+            <div class="card-sub">Qty: ${ord.qty} | Billed: $${ord.billedPrice} / Base: $${ord.standardPrice}</div>
+            ${hasDiff ? `<div class="variance-alert">⚠️ Price Variance: $${ord.diff}/unit (Total: $${totalDiff})</div>` : ''}
+            ${hasDiff ? `<button class="btn-ghost-small" onclick="generateDiffInvoice('${ord.id}')">📄 Generate Discrepancy Docket</button>` : ''}
           </div>
           <div>
-            ${isPending ? `<button class="btn-small" style="background: var(--success);" onclick="completeOrder('${ord.id}')">Complete</button>` : ''}
+            ${isPending ? `<button class="btn-ghost-small" style="color: var(--emerald-accent); border-color: rgba(16, 185, 129, 0.3)" onclick="completeOrder('${ord.id}')">Settle</button>` : ''}
           </div>
         `;
         container.appendChild(card);
@@ -314,14 +566,14 @@
       dataset.forEach((pay) => {
         const isReceivable = pay.type === "RECEIVABLE";
         const card = document.createElement("div");
-        card.className = "card";
+        card.className = "exec-card";
         card.innerHTML = `
-          <div class="card-info">
-            <span class="badge ${isReceivable ? 'badge-receivable' : 'badge-payable'}">${pay.type}</span>
-            <div class="title">${pay.party}</div>
-            <div class="subtitle">${pay.note || 'General'} • ${pay.date}</div>
+          <div class="card-meta">
+            <span class="status-tag ${isReceivable ? 'tag-receivable' : 'tag-payable'}">${pay.type}</span>
+            <div class="card-title">${pay.party}</div>
+            <div class="card-sub">${pay.note || 'General Record'} • ${pay.date}</div>
           </div>
-          <div style="font-size: 18px; font-weight: bold; color: ${isReceivable ? 'var(--danger)' : 'var(--success)'}">
+          <div style="font-size: 18px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: ${isReceivable ? 'var(--crimson-accent)' : 'var(--emerald-accent)'}">
             $${pay.amount}
           </div>
         `;
@@ -329,7 +581,7 @@
       });
     }
 
-    /* --- SIMPLIFIED DATA ACTIONS --- */
+    /* --- EXECUTIVE LOGIC ENGINE --- */
 
     function adjustQty(index, delta) {
       state.inventory[index].qty = Math.max(0, state.inventory[index].qty + delta);
@@ -349,9 +601,9 @@
       const standardPrice = parseFloat(document.getElementById("inputSkuStandardPrice").value) || 0;
       const qty = parseInt(document.getElementById("inputSkuQty").value) || 0;
       
-      if (!name) return alert("Item name is required");
+      if (!name) return alert("Provide item name");
 
-      const autoCode = `SKU-${state.inventory.length + 1}`;
+      const autoCode = `SKU-${state.inventory.length + 101}`;
       state.inventory.push({ id: autoCode, name, qty, standardPrice });
       
       closeModals();
@@ -365,7 +617,7 @@
       const billedPrice = parseFloat(document.getElementById("inputBilledPrice").value) || 0;
 
       const sku = state.inventory.find(i => i.id === skuId);
-      if (!customer || !sku) return alert("Fill in party name and select an item");
+      if (!customer || !sku) return alert("Complete party and SKU selection");
 
       const standardPrice = sku.standardPrice || 0;
       const priceDiff = billedPrice - standardPrice;
@@ -407,17 +659,17 @@
       const totalDiff = totalBilled - totalStandard;
 
       const invoiceHtml = `
-        <h4>PRICE ADJUSTMENT RECEIPT</h4>
-        <div class="invoice-row"><span>Date:</span> <span>${order.date}</span></div>
-        <div class="invoice-row"><span>Order ID:</span> <span>${order.id}</span></div>
-        <div class="invoice-row"><span>Customer:</span> <span><b>${order.customer}</b></span></div>
+        <h4>AUREUS PRICE DISCREPANCY DOCKET</h4>
+        <div class="docket-row"><span>Date:</span> <span>${order.date}</span></div>
+        <div class="docket-row"><span>Docket ID:</span> <span>${order.id}</span></div>
+        <div class="docket-row"><span>Client Party:</span> <span><b>${order.customer}</b></span></div>
         <hr style="border:none; border-top:1px dashed #000; margin: 8px 0;">
-        <div class="invoice-row"><span>Item:</span> <span>${order.skuName} (x${order.qty})</span></div>
-        <div class="invoice-row"><span>Base Rate:</span> <span>$${order.standardPrice} / unit</span></div>
-        <div class="invoice-row"><span>Billed Rate:</span> <span>$${order.billedPrice} / unit</span></div>
-        <div class="invoice-row"><span>Unit Variance:</span> <span>$${order.diff} / unit</span></div>
-        <div class="invoice-total invoice-row">
-          <span>${totalDiff > 0 ? 'OVERCHARGED REFUND:' : 'UNDERCHARGED BALANCE:'}</span>
+        <div class="docket-row"><span>Item:</span> <span>${order.skuName} (x${order.qty})</span></div>
+        <div class="docket-row"><span>Agreed Base Rate:</span> <span>$${order.standardPrice} / unit</span></div>
+        <div class="docket-row"><span>Actual Billed Rate:</span> <span>$${order.billedPrice} / unit</span></div>
+        <div class="docket-row"><span>Unit Variance:</span> <span>$${order.diff} / unit</span></div>
+        <div class="docket-total docket-row">
+          <span>${totalDiff > 0 ? 'NET REFUND DUE:' : 'NET BALANCE OWED:'}</span>
           <span>$${Math.abs(totalDiff)}</span>
         </div>
       `;
@@ -466,7 +718,7 @@
       const amount = parseFloat(document.getElementById("inputPayAmount").value) || 0;
       const note = document.getElementById("inputPayNote").value.trim();
 
-      if (!party || amount <= 0) return alert("Enter valid party and amount");
+      if (!party || amount <= 0) return alert("Enter party and amount");
 
       state.payments.unshift({ id: `PAY-${Date.now()}`, party, type, amount, note, date: new Date().toISOString().split('T')[0] });
       closeModals();
