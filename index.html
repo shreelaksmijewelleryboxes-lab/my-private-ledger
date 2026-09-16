@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Encrypted Auto-Sync Ledger</title>
+  <!-- PouchDB Engine for zero-knowledge offline sync -->
+  <script src="https://cdn.jsdelivr.net/npm/pouchdb@8.0.1/dist/pouchdb.min.js"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 12px; background: #f0f2f5; color: #1c1e21; }
+    .card { background: #ffffff; padding: 16px; border-radius: 8px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+    h2, h3 { margin-top: 0; color: #050505; }
+    input, select, button { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
+    button { background-color: #1877f2; color: #fff; border: none; font-weight: bold; cursor: pointer; }
+    button:active { background-color: #166fe5; }
+    .status { font-weight: bold; font-size: 13px; color: #28a745; margin-bottom: 8px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th, td { border: 1px solid #e4e6eb; padding: 10px; text-align: left; font-size: 13px; }
+    th { background-color: #f7f8fa; }
+  </style>
+</head>
+<body>
+
+  <!-- Screen 1: Passphrase Unlock & Local Initialization -->
+  <div class="card" id="lock-screen">
+    <h2>🔐 Unlock Ledger</h2>
+    <p style="font-size: 13px; color: #65676b;">Enter your passphrase to decrypt local memory and enable synchronization.</p>
+    <input type="password" id="master-pass" placeholder="Enter Master Passphrase">
+    <input type="text" id="sync-url" placeholder="CouchDB / Cloudant Sync URL (Optional)">
+    <button onclick="unlockAndSync()">Unlock & Start App</button>
+  </div>
+
+  <!-- Screen 2: Main Dashboard -->
+  <div id="app-dashboard" style="display: none;">
+    <div class="card">
+      <div class="status" id="sync-status">🟢 Local Encryption Active</div>
+      <button style="background: #e4e6eb; color: #050505;" onclick="lockApp()">🔒 Lock Session</button>
+    </div>
+
+    <!-- Inventory Form -->
+    <div class="card">
+      <h3>Inventory (100–200 SKUs)</h3>
+      <input type="text" id="sku-id" placeholder="SKU ID / Name (e.g., Apple)">
+      <input type="number" id="sku-qty" placeholder="Quantity in Stock">
+      <button onclick="saveSKU()">Save / Update Stock</button>
+    </div>
+
+    <!-- Ledgers & Orders Form -->
+    <div class="card">
+      <h3>Orders, Receivables & Payables</h3>
+      <select id="entry-type">
+        <option value="Receivable">Receivable (Customer Owes Me)</option>
+        <option value="Payable">Payable (I Owe Supplier)</option>
+        <option value="Order">Order (Current / Pending)</option>
+      </select>
+      <input type="text" id="entry-party" placeholder="Party Name / Order #">
+      <input type="number" id="entry-amount" placeholder="Amount (₹)">
+      <button onclick="saveTransaction()">Save Entry</button>
+    </div>
+
+    <!-- Data Displays -->
+    <div class="card">
+      <h3>Stock Ledger</h3>
+      <table id="sku-table">
+        <thead><tr><th>SKU</th><th>Stock Qty</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>Financial Ledger</h3>
+      <table id="ledger-table">
+        <thead><tr><th>Type</th><th>Party / Order</th><th>Amount (₹)</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const localDB = new PouchDB('local_encrypted_ledger');
+    let masterCryptoKey = null;
+
+    // Browser-Native AES-256 Key Derivation (PBKDF2)
+    async function deriveKey(passphrase) {
+      const enc = new TextEncoder();
+      const keyMaterial = await crypto.subtle.importKey("raw", enc.encode(passphrase), "PBKDF2", false, ["deriveKey"]);
+      return crypto.subtle.deriveKey(
+        { name: "PBKDF2", salt: enc.encode("ZeroKnowledgeFixedSalt99"), iterations: 100000, hash: "SHA-256" },
+        keyMaterial, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
+      );
+    }
+
+    // Client-side Encrypt (RAM Only)
+    async function encryptObject(obj) {
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const encoded = new TextEncoder().encode(JSON.stringify(obj));
+      const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, masterCryptoKey, encoded);
+      return { iv: Array.from(iv), data: Array.from(new Uint8Array(ciphertext)) };
+    }
+
+    // Client-side Decrypt
+    async function decryptObject(payload) {
+      const decrypted = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: new Uint8Array(payload.iv) },
+        masterCryptoKey,
+        new Uint8Array(payload.data)
+      );
+      return JSON.parse(new TextDecoder().decode(decrypted));
+    }
+
+    async function unlockAndSync() {
+      const pass = document.getElementById("master-pass").value;
+      const remoteURL = document.getElementById("sync-url").value;
+
+      if (!pass) return alert("Passphrase is required.");
+
+      if (remoteURL) localStorage.setItem("saved_sync_url", remoteURL);
+
+      masterCryptoKey = await deriveKey(pass);
+
+      document.getElementById("lock-screen").style.display = "none";
+      document.getElementById("app-dashboard").style.display = "block";
+
+      const syncURL = remoteURL || localStorage.getItem("saved_sync_url");
+      if (syncURL) {
+        const remoteDB = new PouchDB(syncURL);
+        localDB.sync(remoteDB, { live: true, retry: true })
+          .on('change', () => renderUI())
+          .on('paused', () => document.getElementById("sync-status").innerText = "🟢 Sync Active (Zero-Knowledge)")
+          .on('error', () => document.getElementById("sync-status").innerText = "🔴 Sync Offline / Check URL");
+      }
+
+      renderUI();
+    }
+
+    async function saveSKU() {
+      const name = document.getElementById("sku-id").value.trim();
+      const qty = parseInt(document.getElementById("sku-qty").value);
+
+      if (!name || isNaN(qty)) return alert("Enter valid SKU details");
+
+      const payload = await encryptObject({ name, qty, type: 'SKU' });
+      await localDB.put({ _id: 'sku_' + Date.now(), payload });
+      
+      document.getElementById("sku-id").value = "";
+      document.getElementById("sku-qty").value = "";
+      renderUI();
+    }
+
+    async function saveTransaction() {
+      const type = document.getElementById("entry-type").value;
+      const party = document.getElementById("entry-party").value.trim();
+      const amount = parseFloat(document.getElementById("entry-amount").value);
+
+      if (!party || isNaN(amount)) return alert("Enter valid transaction details");
+
+      const payload = await encryptObject({ type, party, amount, category: 'FINANCE' });
+      await localDB.put({ _id: 'trans_' + Date.now(), payload });
+      
+      document.getElementById("entry-party").value = "";
+      document.getElementById("entry-amount").value = "";
+      renderUI();
+    }
+
+    async function renderUI() {
+      const allDocs = await localDB.allDocs({ include_docs: true });
+      const skuTbody = document.querySelector("#sku-table tbody");
+      const ledgerTbody = document.querySelector("#ledger-table tbody");
+
+      skuTbody.innerHTML = "";
+      ledgerTbody.innerHTML = "";
+
+      for (let row of allDocs.rows) {
+        if (!row.doc.payload) continue;
+        try {
+          const data = await decryptObject(row.doc.payload);
+          if (data.type === 'SKU') {
+            skuTbody.innerHTML += `<tr><td>${data.name}</td><td>${data.qty}</td></tr>`;
+          } else if (data.category === 'FINANCE') {
+            ledgerTbody.innerHTML += `<tr><td>${data.type}</td><td>${data.party}</td><td>₹${data.amount}</td></tr>`;
+          }
+        } catch (e) {
+          // Ignores bad passphrase decryptions
+        }
+      }
+    }
+
+    function lockApp() {
+      masterCryptoKey = null;
+      document.getElementById("master-pass").value = "";
+      document.getElementById("lock-screen").style.display = "block";
+      document.getElementById("app-dashboard").style.display = "none";
+    }
+
+    window.onload = () => {
+      const saved = localStorage.getItem("saved_sync_url");
+      if (saved) document.getElementById("sync-url").value = saved;
+    };
+  </script>
+</body>
+</html>
