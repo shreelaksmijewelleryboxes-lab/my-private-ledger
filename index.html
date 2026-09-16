@@ -6,13 +6,14 @@
   <title>Zero-Knowledge Mobile ERP</title>
   <style>
     :root {
-      --bg: #090d16;
-      --card-bg: #151c2c;
-      --border: #2a364f;
-      --accent: #3b82f6;
-      --text: #ffffff;
-      --subtext: #94a3b8;
-      --success: #22c55e;
+      --bg: #0b0f19;
+      --card-bg: #111827;
+      --card-border: #1f293d;
+      --accent: #2563eb;
+      --accent-glow: rgba(37, 99, 235, 0.35);
+      --text: #f9fafb;
+      --subtext: #9ca3af;
+      --success: #10b981;
       --danger: #ef4444;
       --warning: #f59e0b;
     }
@@ -20,54 +21,59 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; touch-action: manipulation; }
     body { background-color: var(--bg); color: var(--text); padding: 12px; max-width: 600px; margin: 0 auto; padding-bottom: 90px; }
 
-    /* Sticky Navigation Header */
-    .sticky-header { position: sticky; top: 0; background: var(--bg); z-index: 100; padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 15px; }
-    .nav-tabs { display: flex; gap: 6px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 4px; }
-    .tab-btn { flex: 1; min-width: 100px; padding: 10px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--card-bg); color: var(--subtext); font-size: 13px; font-weight: bold; cursor: pointer; text-align: center; white-space: nowrap; }
-    .tab-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
-    
-    .search-box { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--card-bg); color: #fff; font-size: 15px; outline: none; }
-    .status-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 12px; color: var(--subtext); }
+    /* Strict Password Overlay */
+    #authOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background: #070a12; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
+    .auth-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 28px; width: 100%; max-width: 360px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+    .auth-card h2 { font-size: 20px; margin-bottom: 6px; }
+    .auth-card p { font-size: 13px; color: var(--subtext); margin-bottom: 18px; }
+    .auth-card input { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid var(--card-border); background: var(--bg); color: #fff; font-size: 18px; text-align: center; margin-bottom: 14px; outline: none; }
 
-    /* Generic Card Lists */
+    /* Main App Interface */
+    #appContent { display: none; }
+    .sticky-header { position: sticky; top: 0; background: rgba(11, 15, 25, 0.95); backdrop-filter: blur(8px); z-index: 100; padding-bottom: 10px; border-bottom: 1px solid var(--card-border); margin-bottom: 15px; }
+    .nav-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+    .tab-btn { flex: 1; padding: 12px 8px; border-radius: 10px; border: 1px solid var(--card-border); background: var(--card-bg); color: var(--subtext); font-size: 13px; font-weight: bold; cursor: pointer; text-align: center; }
+    .tab-btn.active { background: var(--accent); color: white; border-color: var(--accent); box-shadow: 0 4px 12px var(--accent-glow); }
+    
+    .search-box { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--card-border); background: var(--card-bg); color: #fff; font-size: 15px; outline: none; }
+    .status-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 12px; color: var(--subtext); }
+
+    /* List Display Cards */
     .list-container { display: flex; flex-direction: column; gap: 10px; }
-    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; justify-content: space-between; align-items: center; }
+    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 14px; display: flex; justify-content: space-between; align-items: center; }
     .card-info { flex-grow: 1; padding-right: 10px; }
-    .title { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .title { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 3px; }
     .subtitle { font-size: 13px; color: var(--subtext); }
     
-    /* SKU Counter */
-    .stock-controls { display: flex; align-items: center; gap: 6px; background: var(--bg); padding: 4px; border-radius: 8px; border: 1px solid var(--border); }
-    .btn-counter { width: 36px; height: 36px; border-radius: 6px; border: none; font-size: 18px; font-weight: bold; color: white; cursor: pointer; }
+    /* SKU Counter Controls */
+    .stock-controls { display: flex; align-items: center; gap: 6px; background: var(--bg); padding: 4px; border-radius: 10px; border: 1px solid var(--card-border); }
+    .btn-counter { width: 38px; height: 38px; border-radius: 8px; border: none; font-size: 18px; font-weight: bold; color: white; cursor: pointer; }
     .btn-minus { background: #1e293b; color: var(--danger); }
     .btn-plus { background: var(--success); color: white; }
-    .stock-val { font-size: 16px; font-weight: bold; min-width: 28px; text-align: center; }
+    .stock-val { font-size: 16px; font-weight: bold; min-width: 30px; text-align: center; }
 
-    /* Tags & Statuses */
-    .badge { font-size: 11px; font-weight: bold; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; display: inline-block; margin-bottom: 4px; }
-    .badge-pending { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
-    .badge-completed { background: rgba(34, 197, 94, 0.2); color: var(--success); }
-    .badge-given { background: rgba(34, 197, 94, 0.2); color: var(--success); }
-    .badge-taken { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
-    .price-diff { font-size: 13px; font-weight: bold; color: var(--warning); margin-top: 4px; }
+    /* Badges */
+    .badge { font-size: 10px; font-weight: bold; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; display: inline-block; margin-bottom: 4px; }
+    .badge-pending { background: rgba(245, 158, 11, 0.15); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-completed { background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-receivable { background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+    .badge-payable { background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .price-diff { font-size: 12px; font-weight: bold; color: var(--warning); margin-top: 4px; }
 
-    /* Action Buttons */
-    .btn-small { padding: 6px 10px; border-radius: 6px; border: none; font-size: 12px; font-weight: bold; cursor: pointer; background: var(--accent); color: white; margin-top: 6px; }
+    .btn-primary { width: 100%; padding: 12px; border-radius: 10px; border: none; font-weight: bold; font-size: 15px; cursor: pointer; background: var(--accent); color: white; box-shadow: 0 4px 12px var(--accent-glow); }
+    .btn-small { padding: 6px 12px; border-radius: 8px; border: none; font-size: 12px; font-weight: bold; cursor: pointer; background: var(--accent); color: white; margin-top: 6px; }
+    .fab-add { position: fixed; bottom: 20px; right: 20px; width: 58px; height: 58px; border-radius: 50%; background: var(--accent); color: white; border: none; font-size: 30px; font-weight: bold; box-shadow: 0 8px 20px var(--accent-glow); cursor: pointer; z-index: 99; }
 
-    /* Floating Action Button */
-    .fab-add { position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: white; border: none; font-size: 28px; font-weight: bold; box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4); cursor: pointer; z-index: 99; }
-
-    /* Dialog Modals */
+    /* Simplified Quick Modals */
     .modal-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 15px; }
-    .modal-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; width: 100%; max-width: 420px; padding: 20px; max-height: 90vh; overflow-y: auto; }
-    .modal-box h3 { margin-bottom: 12px; font-size: 18px; }
-    .modal-box input, .modal-box select { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: white; font-size: 15px; }
-    .modal-actions { display: flex; gap: 8px; margin-top: 10px; }
-    .btn-action { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: bold; font-size: 15px; cursor: pointer; }
-    .btn-save { background: var(--accent); color: white; }
-    .btn-cancel { background: transparent; color: var(--subtext); border: 1px solid var(--border); }
+    .modal-box { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; width: 100%; max-width: 420px; padding: 22px; max-height: 90vh; overflow-y: auto; }
+    .modal-box h3 { margin-bottom: 14px; font-size: 18px; }
+    .field-label { font-size: 12px; color: var(--subtext); margin-bottom: 4px; display: block; }
+    .modal-box input, .modal-box select { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 8px; border: 1px solid var(--card-border); background: var(--bg); color: white; font-size: 15px; outline: none; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 10px; }
+    .btn-cancel { background: transparent; color: var(--subtext); border: 1px solid var(--card-border); flex: 1; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; }
 
-    /* Printable Invoice Card */
+    /* Printable Invoice */
     .invoice-preview { background: #ffffff; color: #000000; padding: 16px; border-radius: 8px; font-family: monospace; font-size: 13px; line-height: 1.4; }
     .invoice-preview h4 { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 6px; margin-bottom: 10px; }
     .invoice-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
@@ -76,84 +82,104 @@
 </head>
 <body>
 
-  <!-- Sticky Top Header -->
-  <div class="sticky-header">
-    <div class="nav-tabs">
-      <button id="tabInventory" class="tab-btn active" onclick="switchTab('inventory')">📦 SKUs</button>
-      <button id="tabOrders" class="tab-btn" onclick="switchTab('orders')">📋 Orders</button>
-      <button id="tabPayments" class="tab-btn" onclick="switchTab('payments')">💰 Ledger</button>
-    </div>
-    <input type="text" id="searchBar" class="search-box" placeholder="🔍 Search current view..." oninput="filterData()">
-    <div class="status-bar">
-      <span id="recordCount">Loading...</span>
-      <span id="syncStatus" style="color: var(--success)">● Encrypted & Synced</span>
+  <!-- Strict Lock Screen (No Reset Option) -->
+  <div id="authOverlay">
+    <div class="auth-card">
+      <h2>🔒 Secure ERP</h2>
+      <p id="authSubtitle">Enter Master Password</p>
+      <input type="password" id="masterPasscode" placeholder="••••••••" autocomplete="off">
+      <button class="btn-primary" onclick="handleAuth()">Unlock</button>
     </div>
   </div>
 
-  <!-- Main View Containers -->
-  <div id="inventoryContainer" class="list-container"></div>
-  <div id="ordersContainer" class="list-container" style="display: none;"></div>
-  <div id="paymentsContainer" class="list-container" style="display: none;"></div>
+  <!-- Main App Interface -->
+  <div id="appContent">
+    <div class="sticky-header">
+      <div class="nav-tabs">
+        <button id="tabInventory" class="tab-btn active" onclick="switchTab('inventory')">📦 SKUs</button>
+        <button id="tabOrders" class="tab-btn" onclick="switchTab('orders')">📋 Orders</button>
+        <button id="tabPayments" class="tab-btn" onclick="switchTab('payments')">💰 Ledger</button>
+      </div>
+      <input type="text" id="searchBar" class="search-box" placeholder="🔍 Quick search..." oninput="filterData()">
+      <div class="status-bar">
+        <span id="recordCount">Loading...</span>
+        <button class="btn-small" style="padding: 3px 8px; font-size: 11px; background: #1e293d;" onclick="lockApp()">🔒 Lock</button>
+      </div>
+    </div>
 
-  <!-- Big Floating Action Button -->
-  <button class="fab-add" onclick="openAddModal()">+</button>
+    <div id="inventoryContainer" class="list-container"></div>
+    <div id="ordersContainer" class="list-container" style="display: none;"></div>
+    <div id="paymentsContainer" class="list-container" style="display: none;"></div>
 
-  <!-- SKU Modal -->
+    <button class="fab-add" onclick="openAddModal()">+</button>
+  </div>
+
+  <!-- Streamlined SKU Form -->
   <div id="skuModal" class="modal-overlay">
     <div class="modal-box">
-      <h3>Add Inventory SKU</h3>
-      <input type="text" id="inputSkuName" placeholder="Item Name (e.g. Red Apple)">
-      <input type="text" id="inputSkuCode" placeholder="SKU Code (e.g. SKU-101)">
-      <input type="number" id="inputSkuQty" placeholder="Starting Quantity">
-      <input type="number" id="inputSkuStandardPrice" placeholder="Standard Cost Price ($ / ₹)">
+      <h3>Quick Add SKU</h3>
+      <span class="field-label">Item Name</span>
+      <input type="text" id="inputSkuName" placeholder="e.g. Red Apple">
+      <span class="field-label">Standard Price ($ / ₹)</span>
+      <input type="number" id="inputSkuStandardPrice" placeholder="10">
+      <span class="field-label">Initial Stock</span>
+      <input type="number" id="inputSkuQty" placeholder="100">
       <div class="modal-actions">
-        <button class="btn-action btn-cancel" onclick="closeModals()">Cancel</button>
-        <button class="btn-action btn-save" onclick="saveSku()">Save Item</button>
+        <button class="btn-cancel" onclick="closeModals()">Cancel</button>
+        <button class="btn-primary" style="flex:1" onclick="saveSku()">Save SKU</button>
       </div>
     </div>
   </div>
 
-  <!-- Order / Price Match Modal -->
+  <!-- Streamlined Order / Price Matching Form -->
   <div id="orderModal" class="modal-overlay">
     <div class="modal-box">
-      <h3>Create Order / Price Check</h3>
-      <input type="text" id="inputCustomerName" placeholder="Customer / Supplier Name">
+      <h3>Create Quick Order</h3>
+      <span class="field-label">Select Item</span>
       <select id="inputOrderSku" onchange="autoFillPrice()"></select>
-      <input type="number" id="inputOrderQty" placeholder="Quantity Purchased">
-      <input type="number" id="inputBilledPrice" placeholder="Actual Billed Unit Price ($ / ₹)">
+      <span class="field-label">Customer / Party Name</span>
+      <input type="text" id="inputCustomerName" placeholder="e.g. John Doe">
+      <span class="field-label">Quantity</span>
+      <input type="number" id="inputOrderQty" value="1">
+      <span class="field-label">Actual Billed Unit Price</span>
+      <input type="number" id="inputBilledPrice" placeholder="10">
       <div class="modal-actions">
-        <button class="btn-action btn-cancel" onclick="closeModals()">Cancel</button>
-        <button class="btn-action btn-save" onclick="saveOrder()">Create Order</button>
+        <button class="btn-cancel" onclick="closeModals()">Cancel</button>
+        <button class="btn-primary" style="flex:1" onclick="saveOrder()">Create Order</button>
       </div>
     </div>
   </div>
 
-  <!-- Payment Modal -->
+  <!-- Streamlined Ledger Form -->
   <div id="paymentModal" class="modal-overlay">
     <div class="modal-box">
-      <h3>Record Payment</h3>
+      <h3>Add Ledger Entry</h3>
+      <span class="field-label">Transaction Type</span>
       <select id="inputPayType">
-        <option value="GIVEN">GIVEN (Paid Out)</option>
-        <option value="TAKEN">TAKEN (Received)</option>
+        <option value="RECEIVABLE">AMOUNT RECEIVABLE (Owed to You)</option>
+        <option value="PAYABLE">AMOUNT PAYABLE (You Owe Vendor)</option>
       </select>
-      <input type="text" id="inputPayParty" placeholder="Person / Party Name">
-      <input type="number" id="inputPayAmount" placeholder="Amount">
-      <input type="text" id="inputPayNote" placeholder="Note / Reference">
+      <span class="field-label">Party Name</span>
+      <input type="text" id="inputPayParty" placeholder="Customer or Vendor">
+      <span class="field-label">Amount</span>
+      <input type="number" id="inputPayAmount" placeholder="0.00">
+      <span class="field-label">Note / Invoice #</span>
+      <input type="text" id="inputPayNote" placeholder="Optional reference">
       <div class="modal-actions">
-        <button class="btn-action btn-cancel" onclick="closeModals()">Cancel</button>
-        <button class="btn-action btn-save" onclick="savePayment()">Save Entry</button>
+        <button class="btn-cancel" onclick="closeModals()">Cancel</button>
+        <button class="btn-primary" style="flex:1" onclick="savePayment()">Save Entry</button>
       </div>
     </div>
   </div>
 
-  <!-- Printable Discrepancy Invoice Modal -->
+  <!-- Discrepancy Invoice Modal -->
   <div id="invoiceModal" class="modal-overlay">
     <div class="modal-box">
-      <h3>Invoice Discrepancy Notice</h3>
+      <h3>Price Variance Invoice</h3>
       <div id="invoiceBox" class="invoice-preview"></div>
       <div class="modal-actions" style="margin-top: 15px;">
-        <button class="btn-action btn-cancel" onclick="closeModals()">Close</button>
-        <button class="btn-action btn-save" onclick="window.print()">Print / Share PDF</button>
+        <button class="btn-cancel" onclick="closeModals()">Close</button>
+        <button class="btn-primary" style="flex:1" onclick="window.print()">Print / Share PDF</button>
       </div>
     </div>
   </div>
@@ -161,17 +187,57 @@
   <script>
     let currentTab = 'inventory';
 
-    // Core System State
     let state = JSON.parse(localStorage.getItem("erp_data")) || {
       inventory: [
-        { id: "SKU-001", name: "Red Apple", qty: 100, standardPrice: 10 },
-        { id: "SKU-002", name: "Respirator Valve", qty: 40, standardPrice: 50 }
+        { id: "SKU-1", name: "Red Apple", qty: 100, standardPrice: 10 },
+        { id: "SKU-2", name: "Respirator Valve", qty: 40, standardPrice: 50 }
       ],
       orders: [
-        { id: "ORD-101", customer: "Customer John", skuId: "SKU-001", skuName: "Red Apple", qty: 20, standardPrice: 10, billedPrice: 12, diff: 2, status: "PENDING", date: "2026-09-16" }
+        { id: "ORD-101", customer: "John Doe", skuId: "SKU-1", skuName: "Red Apple", qty: 20, standardPrice: 10, billedPrice: 12, diff: 2, status: "PENDING", date: "2026-09-16" }
       ],
       payments: []
     };
+
+    function checkPasscodeStatus() {
+      const storedPass = localStorage.getItem("erp_passcode");
+      const authSubtitle = document.getElementById("authSubtitle");
+      if (!storedPass) {
+        authSubtitle.innerText = "Set your master password";
+      } else {
+        authSubtitle.innerText = "Enter master password to unlock";
+      }
+    }
+
+    function handleAuth() {
+      const inputPass = document.getElementById("masterPasscode").value;
+      const storedPass = localStorage.getItem("erp_passcode");
+
+      if (!inputPass) return alert("Please enter password");
+
+      if (!storedPass) {
+        localStorage.setItem("erp_passcode", inputPass);
+        alert("Password set successfully!");
+        unlockUi();
+      } else if (inputPass === storedPass) {
+        unlockUi();
+      } else {
+        alert("Incorrect Password!");
+        document.getElementById("masterPasscode").value = "";
+      }
+    }
+
+    function unlockUi() {
+      document.getElementById("authOverlay").style.display = "none";
+      document.getElementById("appContent").style.display = "block";
+      document.getElementById("masterPasscode").value = "";
+      filterData();
+    }
+
+    function lockApp() {
+      document.getElementById("appContent").style.display = "none";
+      document.getElementById("authOverlay").style.display = "flex";
+      checkPasscodeStatus();
+    }
 
     function switchTab(tab) {
       currentTab = tab;
@@ -191,7 +257,7 @@
     function renderInventory(dataset) {
       const container = document.getElementById("inventoryContainer");
       container.innerHTML = "";
-      document.getElementById("recordCount").innerText = `${dataset.length} SKUs Listed`;
+      document.getElementById("recordCount").innerText = `${dataset.length} Items Listed`;
 
       dataset.forEach((item) => {
         const index = state.inventory.findIndex(i => i.id === item.id);
@@ -200,7 +266,7 @@
         card.innerHTML = `
           <div class="card-info">
             <div class="title">${item.name}</div>
-            <div class="subtitle">${item.id} • Std Base: $${item.standardPrice || 0}</div>
+            <div class="subtitle">Base Price: $${item.standardPrice || 0}</div>
           </div>
           <div class="stock-controls">
             <button class="btn-counter btn-minus" onclick="adjustQty(${index}, -1)">-</button>
@@ -215,7 +281,7 @@
     function renderOrders(dataset) {
       const container = document.getElementById("ordersContainer");
       container.innerHTML = "";
-      document.getElementById("recordCount").innerText = `${dataset.length} Current Orders`;
+      document.getElementById("recordCount").innerText = `${dataset.length} Orders`;
 
       dataset.forEach((ord) => {
         const hasDiff = ord.diff !== 0;
@@ -228,9 +294,9 @@
           <div class="card-info">
             <span class="badge ${isPending ? 'badge-pending' : 'badge-completed'}">${ord.status}</span>
             <div class="title">${ord.customer} (${ord.skuName})</div>
-            <div class="subtitle">Qty: ${ord.qty} | Billed: $${ord.billedPrice} / Std: $${ord.standardPrice}</div>
-            ${hasDiff ? `<div class="price-diff">⚠️ Price Diff: $${ord.diff}/unit (Total Extra: $${totalDiff})</div>` : ''}
-            ${hasDiff ? `<button class="btn-small" onclick="generateDiffInvoice('${ord.id}')">📄 Generate Price Diff Invoice</button>` : ''}
+            <div class="subtitle">Qty: ${ord.qty} | Billed: $${ord.billedPrice} / Base: $${ord.standardPrice}</div>
+            ${hasDiff ? `<div class="price-diff">⚠️ Price Diff: $${ord.diff}/unit (Total: $${totalDiff})</div>` : ''}
+            ${hasDiff ? `<button class="btn-small" onclick="generateDiffInvoice('${ord.id}')">📄 Share Invoice</button>` : ''}
           </div>
           <div>
             ${isPending ? `<button class="btn-small" style="background: var(--success);" onclick="completeOrder('${ord.id}')">Complete</button>` : ''}
@@ -243,27 +309,27 @@
     function renderPayments(dataset) {
       const container = document.getElementById("paymentsContainer");
       container.innerHTML = "";
-      document.getElementById("recordCount").innerText = `${dataset.length} Ledger Entries`;
+      document.getElementById("recordCount").innerText = `${dataset.length} Ledger Items`;
 
       dataset.forEach((pay) => {
-        const isGiven = pay.type === "GIVEN";
+        const isReceivable = pay.type === "RECEIVABLE";
         const card = document.createElement("div");
         card.className = "card";
         card.innerHTML = `
           <div class="card-info">
-            <span class="badge ${isGiven ? 'badge-given' : 'badge-taken'}">${pay.type}</span>
+            <span class="badge ${isReceivable ? 'badge-receivable' : 'badge-payable'}">${pay.type}</span>
             <div class="title">${pay.party}</div>
-            <div class="subtitle">${pay.note || 'No description'} • ${pay.date}</div>
+            <div class="subtitle">${pay.note || 'General'} • ${pay.date}</div>
           </div>
-          <div style="font-size: 18px; font-weight: bold; color: ${isGiven ? 'var(--success)' : 'var(--danger)'}">
-            ${isGiven ? '+' : '-'}$${pay.amount}
+          <div style="font-size: 18px; font-weight: bold; color: ${isReceivable ? 'var(--danger)' : 'var(--success)'}">
+            $${pay.amount}
           </div>
         `;
         container.appendChild(card);
       });
     }
 
-    /* --- DATA ACTIONS & PRICE MATCHING LOGIC --- */
+    /* --- SIMPLIFIED DATA ACTIONS --- */
 
     function adjustQty(index, delta) {
       state.inventory[index].qty = Math.max(0, state.inventory[index].qty + delta);
@@ -278,17 +344,31 @@
       }
     }
 
+    function saveSku() {
+      const name = document.getElementById("inputSkuName").value.trim();
+      const standardPrice = parseFloat(document.getElementById("inputSkuStandardPrice").value) || 0;
+      const qty = parseInt(document.getElementById("inputSkuQty").value) || 0;
+      
+      if (!name) return alert("Item name is required");
+
+      const autoCode = `SKU-${state.inventory.length + 1}`;
+      state.inventory.push({ id: autoCode, name, qty, standardPrice });
+      
+      closeModals();
+      saveAndSync();
+    }
+
     function saveOrder() {
       const customer = document.getElementById("inputCustomerName").value.trim();
       const skuId = document.getElementById("inputOrderSku").value;
-      const qty = parseInt(document.getElementById("inputOrderQty").value) || 0;
+      const qty = parseInt(document.getElementById("inputOrderQty").value) || 1;
       const billedPrice = parseFloat(document.getElementById("inputBilledPrice").value) || 0;
 
       const sku = state.inventory.find(i => i.id === skuId);
-      if (!customer || !sku || qty <= 0) return alert("Please fill all required order details");
+      if (!customer || !sku) return alert("Fill in party name and select an item");
 
       const standardPrice = sku.standardPrice || 0;
-      const priceDiff = billedPrice - standardPrice; // Positive = Overbilled, Negative = Underbilled
+      const priceDiff = billedPrice - standardPrice;
 
       const newOrder = {
         id: `ORD-${Date.now().toString().slice(-4)}`,
@@ -304,8 +384,6 @@
       };
 
       state.orders.unshift(newOrder);
-      
-      // Auto-adjust inventory stock
       sku.qty = Math.max(0, sku.qty - qty);
 
       closeModals();
@@ -329,45 +407,45 @@
       const totalDiff = totalBilled - totalStandard;
 
       const invoiceHtml = `
-        <h4>PRICE ADJUSTMENT INVOICE</h4>
+        <h4>PRICE ADJUSTMENT RECEIPT</h4>
         <div class="invoice-row"><span>Date:</span> <span>${order.date}</span></div>
-        <div class="invoice-row"><span>Invoice ID:</span> <span>${order.id}</span></div>
+        <div class="invoice-row"><span>Order ID:</span> <span>${order.id}</span></div>
         <div class="invoice-row"><span>Customer:</span> <span><b>${order.customer}</b></span></div>
         <hr style="border:none; border-top:1px dashed #000; margin: 8px 0;">
         <div class="invoice-row"><span>Item:</span> <span>${order.skuName} (x${order.qty})</span></div>
-        <div class="invoice-row"><span>Agreed Base Price:</span> <span>$${order.standardPrice} / unit</span></div>
-        <div class="invoice-row"><span>Billed Price:</span> <span>$${order.billedPrice} / unit</span></div>
-        <div class="invoice-row"><span>Difference / Unit:</span> <span>$${order.diff}</span></div>
+        <div class="invoice-row"><span>Base Rate:</span> <span>$${order.standardPrice} / unit</span></div>
+        <div class="invoice-row"><span>Billed Rate:</span> <span>$${order.billedPrice} / unit</span></div>
+        <div class="invoice-row"><span>Unit Variance:</span> <span>$${order.diff} / unit</span></div>
         <div class="invoice-total invoice-row">
           <span>${totalDiff > 0 ? 'OVERCHARGED REFUND:' : 'UNDERCHARGED BALANCE:'}</span>
           <span>$${Math.abs(totalDiff)}</span>
         </div>
-        <p style="text-align:center; font-size: 11px; margin-top:12px;">This document reflects adjusted pricing matching standard system agreements.</p>
       `;
 
       document.getElementById("invoiceBox").innerHTML = invoiceHtml;
       document.getElementById("invoiceModal").style.display = "flex";
     }
 
-    /* --- SYSTEM UTILITIES --- */
-
     function filterData() {
       const query = document.getElementById("searchBar").value.toLowerCase();
       if (currentTab === 'inventory') {
-        renderInventory(state.inventory.filter(i => i.name.toLowerCase().includes(query) || i.id.toLowerCase().includes(query)));
+        renderInventory(state.inventory.filter(i => i.name.toLowerCase().includes(query)));
       } else if (currentTab === 'orders') {
-        renderOrders(state.orders.filter(o => o.customer.toLowerCase().includes(query) || o.skuName.toLowerCase().includes(query) || o.id.toLowerCase().includes(query)));
+        renderOrders(state.orders.filter(o => o.customer.toLowerCase().includes(query) || o.skuName.toLowerCase().includes(query)));
       } else {
-        renderPayments(state.payments.filter(p => p.party.toLowerCase().includes(query) || (p.note && p.note.toLowerCase().includes(query))));
+        renderPayments(state.payments.filter(p => p.party.toLowerCase().includes(query)));
       }
     }
 
     function openAddModal() {
       if (currentTab === 'inventory') {
+        document.getElementById("inputSkuName").value = "";
+        document.getElementById("inputSkuStandardPrice").value = "";
+        document.getElementById("inputSkuQty").value = "";
         document.getElementById("skuModal").style.display = "flex";
       } else if (currentTab === 'orders') {
         const select = document.getElementById("inputOrderSku");
-        select.innerHTML = state.inventory.map(i => `<option value="${i.id}">${i.name} (In Stock: ${i.qty})</option>`).join('');
+        select.innerHTML = state.inventory.map(i => `<option value="${i.id}">${i.name} (Stock: ${i.qty})</option>`).join('');
         autoFillPrice();
         document.getElementById("orderModal").style.display = "flex";
       } else {
@@ -380,19 +458,6 @@
       document.getElementById("orderModal").style.display = "none";
       document.getElementById("paymentModal").style.display = "none";
       document.getElementById("invoiceModal").style.display = "none";
-    }
-
-    function saveSku() {
-      const name = document.getElementById("inputSkuName").value.trim();
-      const code = document.getElementById("inputSkuCode").value.trim() || `SKU-${state.inventory.length + 1}`;
-      const qty = parseInt(document.getElementById("inputSkuQty").value) || 0;
-      const standardPrice = parseFloat(document.getElementById("inputSkuStandardPrice").value) || 0;
-
-      if (!name) return alert("Item Name required");
-
-      state.inventory.push({ id: code, name, qty, standardPrice });
-      closeModals();
-      saveAndSync();
     }
 
     function savePayment() {
@@ -411,22 +476,9 @@
     function saveAndSync() {
       localStorage.setItem("erp_data", JSON.stringify(state));
       filterData();
-      triggerBackgroundPush();
     }
 
-    function triggerBackgroundPush() {
-      const status = document.getElementById("syncStatus");
-      status.style.color = "#f59e0b";
-      status.innerText = "● Encrypting & Pushing...";
-      
-      setTimeout(() => {
-        status.style.color = "var(--success)";
-        status.innerText = "● Encrypted & Synced";
-      }, 800);
-    }
-
-    // Initialize App
-    filterData();
+    checkPasscodeStatus();
   </script>
 </body>
 </html>
