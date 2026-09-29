@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Inventory, Manufacturing & Billing System</title>
+  <title>Inventory, Manufacturing, Attendance & Billing System</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     body { background-color: #f4f6f9; color: #333; padding: 15px; }
@@ -41,14 +41,23 @@
     .btn { background: #28a745; color: #fff; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-size: 15px; width: 100%; font-weight: 600; }
     .btn-secondary { background: #17a2b8; margin-top: 10px; }
     .btn-warning { background: #ffc107; color: #000; }
+    .btn-danger { background: #dc3545; color: white; }
     
     /* Tables */
     .table-responsive { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
     table th, table td { border: 1px solid #dee2e6; padding: 8px; text-align: left; }
     table th { background-color: #e9ecef; }
+
+    /* Badge & Alert Tags */
+    .badge-alert { background: #dc3545; color: #fff; padding: 3px 7px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+    .badge-ok { background: #28a745; color: #fff; padding: 3px 7px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+    .badge-pending { background: #ffc107; color: #000; padding: 3px 7px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+
+    /* Tree View for Categories */
+    .tree-node { margin-left: 15px; border-left: 2px dashed #ccc; padding-left: 10px; margin-top: 5px; }
     
-    /* Tally ERP 9 Invoice Styles */
+    /* Invoice Modal */
     #invoice-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; overflow-y: auto; padding: 10px; }
     .invoice-container { background: #fff; width: 100%; max-width: 800px; margin: 20px auto; padding: 20px; border-radius: 4px; }
     .tally-box { border: 2px solid #000; padding: 15px; font-family: 'Courier New', Courier, monospace; background: #fff; color: #000; }
@@ -79,8 +88,6 @@
   <!-- DYNAMIC AUTH / PASSWORD OVERLAY -->
   <div id="login-overlay">
     <div class="login-card">
-      
-      <!-- FIRST TIME SETUP FORM -->
       <div id="setup-form-container" class="hidden">
         <h2>Welcome! First-Time Setup</h2>
         <p>Set a master password for your system.</p>
@@ -90,7 +97,6 @@
         <p id="setup-error" style="color:red; margin-top:10px; display:none; font-size:13px;"></p>
       </div>
 
-      <!-- REGULAR LOGIN FORM -->
       <div id="login-form-container" class="hidden">
         <h2>Enter Password</h2>
         <p>Enter your password to unlock the tool.</p>
@@ -99,7 +105,6 @@
         <p id="login-error" style="color:red; margin-top:10px; display:none; font-size:13px;">Incorrect Password</p>
       </div>
 
-      <!-- CHANGE PASSWORD FORM (INSIDE APP) -->
       <div id="change-form-container" class="hidden">
         <h2>Change Master Password</h2>
         <p>Update your access password below.</p>
@@ -109,14 +114,13 @@
         <button onclick="closeChangeModal()" style="background:#6c757d; margin-top:8px;">Cancel</button>
         <p id="change-error" style="color:red; margin-top:10px; display:none; font-size:13px;"></p>
       </div>
-
     </div>
   </div>
 
   <!-- MAIN APP CONTAINER -->
   <div class="container" id="app-container">
     <header>
-      <h1>Inventory & Production Management</h1>
+      <h1>Inventory, Manufacturing & Attendance Management</h1>
       <div class="header-btns">
         <button class="btn-change-pass" onclick="openChangeModal()">Change Password</button>
         <button class="btn-lock" onclick="logout()">Lock Application</button>
@@ -124,48 +128,142 @@
     </header>
 
     <div class="grid">
-      <!-- ADD WORKER -->
+      <!-- 1. WORKER & STAFF ATTENDANCE SETUP -->
       <div class="card">
-        <h2>1. Add Worker</h2>
+        <h2>1. Staff Directory & Daily Wage Setup</h2>
         <form id="worker-form" onsubmit="addWorker(event)">
           <div class="form-group">
             <label>Worker Name / ID</label>
-            <input type="text" id="worker-name" placeholder="Enter worker identifier" required>
+            <input type="text" id="worker-name" placeholder="e.g. John Doe (W-101)" required>
           </div>
-          <button type="submit" class="btn">Add Worker</button>
+          <div class="form-group">
+            <label>Daily Wage Rate (₹)</label>
+            <input type="number" id="worker-rate" step="0.01" placeholder="e.g. 500.00" required>
+          </div>
+          <button type="submit" class="btn">Register Worker</button>
         </form>
       </div>
 
-      <!-- ADD RAW MATERIAL STOCK WITH RATE TRACKER -->
+      <!-- 2. RECORD ATTENDANCE & ADVANCES -->
       <div class="card">
-        <h2>2. Add Raw Material Stock & Price</h2>
+        <h2>2. Record Daily Attendance & Salary Advances</h2>
+        <form id="attendance-form" onsubmit="recordAttendance(event)">
+          <div class="form-group">
+            <label>Select Worker</label>
+            <select id="att-worker-select" required></select>
+          </div>
+          <div class="form-group">
+            <label>Attendance Status</label>
+            <select id="att-status">
+              <option value="1.0">Full Day Present</option>
+              <option value="0.5">Half Day Present</option>
+              <option value="0.0">Absent</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Advance Payment Paid Today (₹)</label>
+            <input type="number" id="att-advance" step="0.01" placeholder="0.00" value="0">
+          </div>
+          <button type="submit" class="btn btn-warning">Save Attendance Log</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- STAFF SALARY & ATTENDANCE SUMMARY -->
+    <div class="card">
+      <h2>Staff Attendance & Payroll Statement</h2>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Worker Name</th>
+              <th>Daily Wage</th>
+              <th>Days Worked</th>
+              <th>Earned Salary (₹)</th>
+              <th>Advances Paid (₹)</th>
+              <th>Net Due Salary (₹)</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="payroll-table-body">
+            <tr><td colspan="7" style="text-align:center;">No workers registered.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- 3. RAW MATERIAL STOCK WITH PRICE MATCH TARGET -->
+      <div class="card">
+        <h2>3. Raw Material Purchase & Benchmark Target</h2>
         <form id="rm-form" onsubmit="addRawMaterial(event)">
           <div class="form-group">
-            <label>Raw Material Description</label>
-            <input type="text" id="rm-name" placeholder="Enter material description" required>
+            <label>Material Description</label>
+            <input type="text" id="rm-name" placeholder="e.g. Cardboard Sheet" required>
           </div>
           <div class="form-group">
             <label>Purchase Price per Unit (₹)</label>
             <input type="number" id="rm-rate" step="0.01" placeholder="0.00" required>
           </div>
           <div class="form-group">
+            <label>Target Price / Benchmark Rate (₹)</label>
+            <input type="number" id="rm-benchmark" step="0.01" placeholder="e.g. Expected Market Rate" required>
+          </div>
+          <div class="form-group">
             <label>Quantity Bought</label>
             <input type="number" id="rm-stock" step="0.01" placeholder="0.00" required>
           </div>
           <div class="form-group">
-            <label>Unit of Measurement</label>
+            <label>Unit</label>
             <select id="rm-unit">
               <option value="meters">Meters (m)</option>
               <option value="pcs">Pieces (pcs)</option>
+              <option value="kg">Kilograms (kg)</option>
             </select>
           </div>
           <button type="submit" class="btn">Save Raw Material Stock</button>
         </form>
       </div>
 
-      <!-- ALLOCATE RAW MATERIAL TO WORKER -->
+      <!-- 4. MULTI-LEVEL PRODUCT & PROCESS CATEGORIES -->
       <div class="card">
-        <h2>3. Issue Raw Material to Worker</h2>
+        <h2>4. Multi-Level Item Process & Variants</h2>
+        <form id="category-form" onsubmit="addCategory(event)">
+          <div class="form-group">
+            <label>Parent Category / Stage (Select 'Root' for main item)</label>
+            <select id="parent-cat-select">
+              <option value="root">-- Root (Main Item e.g., Apple / Box) --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Sub-Category / Stage / Variant Name</label>
+            <input type="text" id="cat-name" placeholder="e.g. Empty Box / Taped / Ready Type A" required>
+          </div>
+          <div class="form-group">
+            <label>Initial Stock (pcs)</label>
+            <input type="number" id="cat-stock" value="0" min="0" required>
+          </div>
+          <div class="form-group">
+            <label>Unit Price (₹)</label>
+            <input type="number" id="cat-price" step="0.01" value="0.00" required>
+          </div>
+          <button type="submit" class="btn">Add Sub-Category / Process</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- HIERARCHICAL ITEM CATEGORY STOCK TREE -->
+    <div class="card">
+      <h2>Nested Item & Sub-Category Inventory Tree</h2>
+      <div id="category-tree-display" style="padding: 10px; background: #fafafa; border: 1px solid #ddd; border-radius: 4px;">
+        <p style="color:#777;">No product categories or sub-units added yet.</p>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- 5. ISSUE MATERIAL & AUDIT THEFT -->
+      <div class="card">
+        <h2>5. Issue Material to Worker</h2>
         <form id="issue-form" onsubmit="issueMaterialToWorker(event)">
           <div class="form-group">
             <label>Select Worker</label>
@@ -179,137 +277,73 @@
             <label>Quantity to Issue</label>
             <input type="number" id="issue-qty" step="0.01" min="0.01" placeholder="0.00" required>
           </div>
-          <button type="submit" class="btn btn-warning">Issue Material to Worker</button>
+          <button type="submit" class="btn btn-warning">Issue Material</button>
         </form>
       </div>
 
-      <!-- REGISTER FINISHED PRODUCT & CONSUMPTION -->
+      <!-- 6. RAW MATERIAL AUDIT & LOSS INSPECTOR -->
       <div class="card">
-        <h2>4. Receive Finished Goods from Worker</h2>
-        <form id="production-form" onsubmit="recordProduction(event)">
+        <h2>6. Audit Material Physical Count / Loss</h2>
+        <form id="audit-form" onsubmit="auditMaterialStock(event)">
           <div class="form-group">
-            <label>Worker</label>
-            <select id="prod-worker-select" required></select>
-          </div>
-          <div class="form-group">
-            <label>Finished Product / Variant Name</label>
-            <input type="text" id="prod-name" placeholder="Enter product name / size variant" required>
+            <label>Select Material</label>
+            <select id="audit-rm-select" required></select>
           </div>
           <div class="form-group">
-            <label>Selling Price per Piece (₹)</label>
-            <input type="number" id="prod-price" step="0.01" placeholder="0.00" required>
+            <label>Actual Physical Quantity Measured</label>
+            <input type="number" id="audit-actual-qty" step="0.01" placeholder="0.00" required>
           </div>
-          <div class="form-group">
-            <label>Quantity Produced (pcs)</label>
-            <input type="number" id="prod-qty" min="1" value="1" required>
-          </div>
-          
-          <div style="border-top:1px solid #ccc; padding-top:10px; margin-top:10px;">
-            <label><strong>Raw Material Used:</strong></label>
-            <div class="form-group" style="margin-top:5px;">
-              <label>Select Raw Material</label>
-              <select id="prod-rm-select" required></select>
-            </div>
-            <div class="form-group">
-              <label>Actual Quantity Used (per product unit)</label>
-              <input type="number" id="prod-rm-used" step="0.01" placeholder="0.00" required>
-            </div>
-          </div>
-          
-          <button type="submit" class="btn">Register Finished Product</button>
+          <button type="submit" class="btn btn-danger">Run Theft & Loss Audit</button>
         </form>
       </div>
     </div>
 
-    <!-- COMBINED INVENTORY TABLES -->
-    <div class="grid">
-      <!-- RAW MATERIAL STOCK TABLE WITH LAST PURCHASE RATE -->
-      <div class="card">
-        <h2>Raw Material Stock & Current Rate</h2>
-        <div class="table-responsive">
-          <table>
-            <thead>
-              <tr>
-                <th>Raw Material</th>
-                <th>In Factory Stock</th>
-                <th>Unit</th>
-                <th>Last Purchase Rate (₹)</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="rm-stock-body">
-              <tr><td colspan="5" style="text-align:center;">No raw material added.</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- FINISHED GOODS STOCK TABLE -->
-      <div class="card">
-        <h2>Finished Goods Stock</h2>
-        <div class="table-responsive">
-          <table>
-            <thead>
-              <tr>
-                <th>Product / Variant</th>
-                <th>Stock</th>
-                <th>Unit</th>
-                <th>Selling Price (₹)</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="goods-stock-body">
-              <tr><td colspan="5" style="text-align:center;">No finished goods available.</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- RAW MATERIAL PURCHASE PRICE HISTORY -->
+    <!-- MATERIAL AUDIT & DISCREPANCY LOG -->
     <div class="card">
-      <h2>Raw Material Price History Logs</h2>
+      <h2>Raw Material Discrepancy & Anti-Theft Audit Log</h2>
       <div class="table-responsive">
         <table>
           <thead>
             <tr>
               <th>Date</th>
               <th>Material</th>
-              <th>Old Rate (₹)</th>
-              <th>New Rate (₹)</th>
-              <th>Price Change</th>
+              <th>System Stock</th>
+              <th>Physical Count</th>
+              <th>Variance / Discrepancy</th>
+              <th>Status</th>
             </tr>
           </thead>
-          <tbody id="price-history-body">
-            <tr><td colspan="5" style="text-align:center;">No price changes logged yet.</td></tr>
+          <tbody id="audit-log-body">
+            <tr><td colspan="6" style="text-align:center;">No audit logs performed yet.</td></tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- WORKER STOCK ALLOCATIONS TABLE -->
+    <!-- PRICE MATCH VARIANCE REPORT -->
     <div class="card">
-      <h2>Raw Material Issued to Workers</h2>
+      <h2>Raw Material Price Match & Benchmark Variance</h2>
       <div class="table-responsive">
         <table>
           <thead>
             <tr>
-              <th>Worker</th>
               <th>Material</th>
-              <th>Issued Balance</th>
-              <th>Unit</th>
+              <th>Last Purchase Rate (₹)</th>
+              <th>Benchmark Target (₹)</th>
+              <th>Variance (₹)</th>
+              <th>Price Match Status</th>
             </tr>
           </thead>
-          <tbody id="worker-stock-body">
-            <tr><td colspan="4" style="text-align:center;">No material currently assigned to workers.</td></tr>
+          <tbody id="price-match-body">
+            <tr><td colspan="5" style="text-align:center;">No raw material pricing recorded.</td></tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- BILLING SECTION -->
+    <!-- BILLING SECTION & DUE DATE REMINDERS -->
     <div class="card">
-      <h2>Generate Billing Invoice</h2>
+      <h2>7. Generate Invoice with Due Date Reminders</h2>
       <form id="invoice-form" onsubmit="addToInvoice(event)">
         <div class="grid">
           <div class="form-group">
@@ -317,7 +351,11 @@
             <input type="text" id="cust-name" placeholder="Buyer Name" required>
           </div>
           <div class="form-group">
-            <label>Select Finished Product</label>
+            <label>Payment Due Date</label>
+            <input type="date" id="cust-due-date" required>
+          </div>
+          <div class="form-group">
+            <label>Select Finished Goods Variant/Sub-Category</label>
             <select id="invoice-item-select" required></select>
           </div>
           <div class="form-group">
@@ -325,7 +363,7 @@
             <input type="number" id="invoice-qty" min="1" value="1" required>
           </div>
         </div>
-        <button type="submit" class="btn">Add to Bill</button>
+        <button type="submit" class="btn">Add Item to Invoice</button>
       </form>
 
       <div class="table-responsive" style="margin-top:15px;">
@@ -335,18 +373,41 @@
               <th>S.No.</th>
               <th>Description</th>
               <th>Qty</th>
-              <th>Unit</th>
               <th>Rate (₹)</th>
               <th>Amount (₹)</th>
             </tr>
           </thead>
           <tbody id="cart-table-body">
-            <tr><td colspan="6" style="text-align:center;">No items added to invoice yet.</td></tr>
+            <tr><td colspan="5" style="text-align:center;">No items added to invoice draft.</td></tr>
           </tbody>
         </table>
       </div>
       <button class="btn btn-secondary" onclick="generateTallyInvoice()" style="margin-top:10px;">Generate Tally ERP 9 Invoice</button>
     </div>
+
+    <!-- INVOICE & DUE DATE MONITOR TABLE -->
+    <div class="card">
+      <h2>Invoice Payment Status & Overdue Tracker</h2>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Inv #</th>
+              <th>Customer</th>
+              <th>Date Issued</th>
+              <th>Due Date</th>
+              <th>Amount (₹)</th>
+              <th>Payment Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="invoice-tracker-body">
+            <tr><td colspan="7" style="text-align:center;">No invoices saved yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 
   <!-- TALLY ERP 9 INVOICE MODAL -->
@@ -372,7 +433,7 @@
           <div class="tally-col border-left">
             <strong>Invoice No:</strong> <span id="tally-inv-no">101</span><br>
             <strong>Date:</strong> <span id="tally-inv-date"></span><br>
-            <strong>Payment Terms:</strong> Cash/UPI
+            <strong>Payment Due Date:</strong> <span id="tally-due-date"></span>
           </div>
         </div>
 
@@ -415,16 +476,15 @@
   </div>
 
   <script>
-    // APP STATE
-    let workers = JSON.parse(localStorage.getItem('app_workers')) || [];
-    let rawMaterials = JSON.parse(localStorage.getItem('app_raw_materials')) || [];
-    let finishedGoods = JSON.parse(localStorage.getItem('app_finished_goods')) || [];
-    let workerBalances = JSON.parse(localStorage.getItem('app_worker_balances')) || [];
-    let productStandards = JSON.parse(localStorage.getItem('app_product_standards')) || {};
-    let priceHistory = JSON.parse(localStorage.getItem('app_price_history')) || [];
+    // APP STATE PERSISTENCE
+    let workers = JSON.parse(localStorage.getItem('app_workers_v2')) || [];
+    let rawMaterials = JSON.parse(localStorage.getItem('app_raw_materials_v2')) || [];
+    let categoryTree = JSON.parse(localStorage.getItem('app_category_tree')) || [];
+    let auditLogs = JSON.parse(localStorage.getItem('app_audit_logs')) || [];
+    let savedInvoices = JSON.parse(localStorage.getItem('app_saved_invoices')) || [];
     let invoiceCart = [];
 
-    // DYNAMIC PASSWORD AUTHENTICATION SYSTEM
+    // AUTH SYSTEM
     window.addEventListener('DOMContentLoaded', () => {
       const storedPassword = localStorage.getItem('system_master_password');
       const isAuthenticated = sessionStorage.getItem('app_is_authenticated');
@@ -436,43 +496,31 @@
         document.getElementById('app-container').style.display = 'none';
 
         if (!storedPassword) {
-          // First time setup screen
           document.getElementById('setup-form-container').classList.remove('hidden');
         } else {
-          // Regular login screen
           document.getElementById('login-form-container').classList.remove('hidden');
         }
       }
       renderAll();
     });
 
-    // 1. First Time Setup
     function saveInitialPassword() {
       const pass = document.getElementById('setup-pass-input').value;
       const confirm = document.getElementById('setup-confirm-input').value;
       const err = document.getElementById('setup-error');
-
-      if (!pass) {
-        err.innerText = "Password cannot be empty.";
+      if (!pass || pass !== confirm) {
+        err.innerText = "Passwords do not match or are empty.";
         err.style.display = 'block';
         return;
       }
-      if (pass !== confirm) {
-        err.innerText = "Passwords do not match!";
-        err.style.display = 'block';
-        return;
-      }
-
       localStorage.setItem('system_master_password', pass);
       sessionStorage.setItem('app_is_authenticated', 'true');
       showApp();
     }
 
-    // 2. Regular Login Verification
     function login() {
       const input = document.getElementById('password-input').value;
       const masterPass = localStorage.getItem('system_master_password');
-
       if (input === masterPass) {
         sessionStorage.setItem('app_is_authenticated', 'true');
         showApp();
@@ -481,7 +529,6 @@
       }
     }
 
-    // 3. Lock Application
     function logout() {
       sessionStorage.removeItem('app_is_authenticated');
       location.reload();
@@ -492,7 +539,6 @@
       document.getElementById('app-container').style.display = 'block';
     }
 
-    // 4. Change Password Logic
     function openChangeModal() {
       document.getElementById('setup-form-container').classList.add('hidden');
       document.getElementById('login-form-container').classList.add('hidden');
@@ -511,250 +557,257 @@
       const curr = document.getElementById('curr-pass-input').value;
       const next = document.getElementById('new-pass-input').value;
       const masterPass = localStorage.getItem('system_master_password');
-      const err = document.getElementById('change-error');
-
-      if (curr !== masterPass) {
-        err.innerText = "Current password is incorrect.";
-        err.style.display = 'block';
+      if (curr !== masterPass || !next) {
+        document.getElementById('change-error').innerText = "Incorrect current password or empty new password.";
+        document.getElementById('change-error').style.display = 'block';
         return;
       }
-      if (!next) {
-        err.innerText = "New password cannot be empty.";
-        err.style.display = 'block';
-        return;
-      }
-
       localStorage.setItem('system_master_password', next);
       alert("Password updated successfully!");
       closeChangeModal();
     }
 
-    // WORKERS
+    // 1. STAFF ATTENDANCE & PAYROLL LOGIC
     function addWorker(e) {
       e.preventDefault();
       const name = document.getElementById('worker-name').value.trim();
-      if (!workers.includes(name)) {
-        workers.push(name);
-        localStorage.setItem('app_workers', JSON.stringify(workers));
+      const rate = parseFloat(document.getElementById('worker-rate').value);
+      if (!workers.find(w => w.name.toLowerCase() === name.toLowerCase())) {
+        workers.push({ id: Date.now().toString(), name, rate, daysWorked: 0, advancePaid: 0 });
+        localStorage.setItem('app_workers_v2', JSON.stringify(workers));
         document.getElementById('worker-form').reset();
         renderAll();
       }
     }
 
-    // RAW MATERIALS WITH PRICE MATCHING ALERT
+    function recordAttendance(e) {
+      e.preventDefault();
+      const workerId = document.getElementById('att-worker-select').value;
+      const status = parseFloat(document.getElementById('att-status').value);
+      const advance = parseFloat(document.getElementById('att-advance').value) || 0;
+
+      const worker = workers.find(w => w.id === workerId);
+      if (worker) {
+        worker.daysWorked += status;
+        worker.advancePaid += advance;
+        localStorage.setItem('app_workers_v2', JSON.stringify(workers));
+        alert(`Recorded ${status} day(s) attendance and ₹${advance} advance for ${worker.name}.`);
+        document.getElementById('attendance-form').reset();
+        renderAll();
+      }
+    }
+
+    function resetWorkerAccount(id) {
+      const worker = workers.find(w => w.id === id);
+      if (worker && confirm(`Clear salary records for ${worker.name}?`)) {
+        worker.daysWorked = 0;
+        worker.advancePaid = 0;
+        localStorage.setItem('app_workers_v2', JSON.stringify(workers));
+        renderAll();
+      }
+    }
+
+    // 2. RAW MATERIAL & PRICE MATCH FEATURE
     function addRawMaterial(e) {
       e.preventDefault();
       const name = document.getElementById('rm-name').value.trim();
-      const newRate = parseFloat(document.getElementById('rm-rate').value);
+      const rate = parseFloat(document.getElementById('rm-rate').value);
+      const benchmark = parseFloat(document.getElementById('rm-benchmark').value);
       const stock = parseFloat(document.getElementById('rm-stock').value);
       const unit = document.getElementById('rm-unit').value;
 
       const idx = rawMaterials.findIndex(r => r.name.toLowerCase() === name.toLowerCase());
-      
       if (idx > -1) {
-        const oldRate = rawMaterials[idx].rate || 0;
-        
-        // CHECK IF PRICE CHANGED
-        if (oldRate > 0 && oldRate !== newRate) {
-          const diff = newRate - oldRate;
-          const pct = ((diff / oldRate) * 100).toFixed(1);
-          const direction = diff > 0 ? "INCREASED 📈" : "DECREASED 📉";
-
-          alert(
-            `⚠️ PRICE CHANGE DETECTED FOR: ${name.toUpperCase()}\n\n` +
-            `• Previous Purchase Rate: ₹ ${oldRate.toFixed(2)} per ${unit}\n` +
-            `• New Purchase Rate: ₹ ${newRate.toFixed(2)} per ${unit}\n` +
-            `• Price ${direction} by ₹ ${Math.abs(diff).toFixed(2)} (${pct}%)\n\n` +
-            `Stock and new rate have been updated.`
-          );
-
-          // Log in History
-          priceHistory.unshift({
-            date: new Date().toLocaleDateString('en-IN'),
-            material: name,
-            oldRate: oldRate,
-            newRate: newRate,
-            diff: diff
-          });
-          localStorage.setItem('app_price_history', JSON.stringify(priceHistory));
-        }
-
         rawMaterials[idx].stock += stock;
-        rawMaterials[idx].rate = newRate; // Update to latest rate
+        rawMaterials[idx].rate = rate;
+        rawMaterials[idx].benchmark = benchmark;
       } else {
-        rawMaterials.push({ name, stock, rate: newRate, unit });
+        rawMaterials.push({ id: Date.now().toString(), name, rate, benchmark, stock, unit });
       }
 
-      localStorage.setItem('app_raw_materials', JSON.stringify(rawMaterials));
+      localStorage.setItem('app_raw_materials_v2', JSON.stringify(rawMaterials));
       document.getElementById('rm-form').reset();
       renderAll();
     }
 
-    // ISSUE MATERIAL TO WORKER
+    // 3. MULTI-LEVEL SUB-CATEGORY & STAGE MANAGER
+    function addCategory(e) {
+      e.preventDefault();
+      const parentId = document.getElementById('parent-cat-select').value;
+      const name = document.getElementById('cat-name').value.trim();
+      const stock = parseInt(document.getElementById('cat-stock').value) || 0;
+      const price = parseFloat(document.getElementById('cat-price').value) || 0;
+
+      const newItem = { id: Date.now().toString(), parentId, name, stock, price, children: [] };
+
+      if (parentId === 'root') {
+        categoryTree.push(newItem);
+      } else {
+        const parent = findCategoryById(categoryTree, parentId);
+        if (parent) {
+          if (!parent.children) parent.children = [];
+          parent.children.push(newItem);
+        }
+      }
+
+      localStorage.setItem('app_category_tree', JSON.stringify(categoryTree));
+      document.getElementById('category-form').reset();
+      renderAll();
+    }
+
+    function findCategoryById(nodes, id) {
+      for (let node of nodes) {
+        if (node.id === id) return node;
+        if (node.children && node.children.length > 0) {
+          const found = findCategoryById(node.children, id);
+          if (found) return found;
+        }
+      }
+      return null;
+    }
+
+    // 4. MATERIAL ISSUE & ANTI-THEFT AUDIT
     function issueMaterialToWorker(e) {
       e.preventDefault();
-      const worker = document.getElementById('issue-worker-select').value;
-      const rmIdx = document.getElementById('issue-rm-select').value;
+      const rmId = document.getElementById('issue-rm-select').value;
       const qty = parseFloat(document.getElementById('issue-qty').value);
 
-      if (rmIdx === "" || !worker) return;
-
-      const material = rawMaterials[rmIdx];
-      if (material.stock < qty) {
-        alert("Insufficient raw material stock in factory!");
-        return;
-      }
-
-      material.stock -= qty;
-
-      let bal = workerBalances.find(b => b.worker === worker && b.rmName === material.name);
-      if (bal) {
-        bal.qty += qty;
-      } else {
-        workerBalances.push({ worker, rmName: material.name, qty, unit: material.unit });
-      }
-
-      localStorage.setItem('app_raw_materials', JSON.stringify(rawMaterials));
-      localStorage.setItem('app_worker_balances', JSON.stringify(workerBalances));
-      document.getElementById('issue-form').reset();
-      renderAll();
-    }
-
-    // PRODUCTION & OVERUSE ALERTS
-    function recordProduction(e) {
-      e.preventDefault();
-      const worker = document.getElementById('prod-worker-select').value;
-      const prodName = document.getElementById('prod-name').value.trim();
-      const price = parseFloat(document.getElementById('prod-price').value);
-      const prodQty = parseInt(document.getElementById('prod-qty').value);
-      
-      const rmIdx = document.getElementById('prod-rm-select').value;
-      const usedQtyPerUnit = parseFloat(document.getElementById('prod-rm-used').value);
-
-      if (rmIdx === "" || !worker) return;
-
-      const material = rawMaterials[rmIdx];
-      const totalRmNeeded = usedQtyPerUnit * prodQty;
-
-      let bal = workerBalances.find(b => b.worker === worker && b.rmName === material.name);
-      if (!bal || bal.qty < totalRmNeeded) {
-        alert(`Worker does not have enough ${material.name}. Required: ${totalRmNeeded} ${material.unit}.`);
-        return;
-      }
-
-      // Overuse Benchmark Alert
-      const stdKey = `${prodName.toLowerCase()}_${material.name.toLowerCase()}`;
-      if (productStandards[stdKey] !== undefined) {
-        if (usedQtyPerUnit > productStandards[stdKey]) {
-          alert(`⚠️ ALERT: QUANTITY OVERUSED!\nExpected benchmark: ${productStandards[stdKey]} ${material.unit} per piece.\nEntered: ${usedQtyPerUnit} ${material.unit} per piece.`);
+      const rm = rawMaterials.find(r => r.id === rmId);
+      if (rm) {
+        if (rm.stock < qty) {
+          alert("Insufficient raw material stock!");
+          return;
         }
-      } else {
-        productStandards[stdKey] = usedQtyPerUnit;
-        localStorage.setItem('app_product_standards', JSON.stringify(productStandards));
+        rm.stock -= qty;
+        localStorage.setItem('app_raw_materials_v2', JSON.stringify(rawMaterials));
+        alert(`Issued ${qty} ${rm.unit} of ${rm.name}.`);
+        document.getElementById('issue-form').reset();
+        renderAll();
       }
+    }
 
-      bal.qty -= totalRmNeeded;
+    function auditMaterialStock(e) {
+      e.preventDefault();
+      const rmId = document.getElementById('audit-rm-select').value;
+      const actualQty = parseFloat(document.getElementById('audit-actual-qty').value);
 
-      const goodsIdx = finishedGoods.findIndex(g => g.name.toLowerCase() === prodName.toLowerCase());
-      if (goodsIdx > -1) {
-        finishedGoods[goodsIdx].stock += prodQty;
-        finishedGoods[goodsIdx].price = price;
-      } else {
-        finishedGoods.push({ name: prodName, stock: prodQty, price: price, unit: 'pcs' });
+      const rm = rawMaterials.find(r => r.id === rmId);
+      if (rm) {
+        const diff = actualQty - rm.stock;
+        const status = diff < 0 ? 'DEFICIT / SUSPECTED THEFT' : (diff > 0 ? 'SURPLUS' : 'BALANCED');
+        
+        auditLogs.unshift({
+          date: new Date().toLocaleDateString('en-IN'),
+          name: rm.name,
+          expected: rm.stock.toFixed(2) + " " + rm.unit,
+          actual: actualQty.toFixed(2) + " " + rm.unit,
+          diff: diff.toFixed(2) + " " + rm.unit,
+          status
+        });
+
+        rm.stock = actualQty; // Sync to actual measured count
+        localStorage.setItem('app_raw_materials_v2', JSON.stringify(rawMaterials));
+        localStorage.setItem('app_audit_logs', JSON.stringify(auditLogs));
+        document.getElementById('audit-form').reset();
+        renderAll();
       }
-
-      localStorage.setItem('app_worker_balances', JSON.stringify(workerBalances));
-      localStorage.setItem('app_finished_goods', JSON.stringify(finishedGoods));
-
-      document.getElementById('production-form').reset();
-      renderAll();
     }
 
-    // DELETE FUNCTIONS
-    function deleteRM(idx) {
-      rawMaterials.splice(idx, 1);
-      localStorage.setItem('app_raw_materials', JSON.stringify(rawMaterials));
-      renderAll();
-    }
-
-    function deleteGoods(idx) {
-      finishedGoods.splice(idx, 1);
-      localStorage.setItem('app_finished_goods', JSON.stringify(finishedGoods));
-      renderAll();
-    }
-
-    // RENDER ALL TABLES
+    // RENDER ALL DATA
     function renderAll() {
-      // Raw Material Stock Table
-      const rmBody = document.getElementById('rm-stock-body');
-      rmBody.innerHTML = '';
+      // 1. Payroll Table
+      const payrollBody = document.getElementById('payroll-table-body');
+      payrollBody.innerHTML = '';
+      if (workers.length === 0) {
+        payrollBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No workers registered.</td></tr>';
+      } else {
+        workers.forEach(w => {
+          const earned = w.daysWorked * w.rate;
+          const net = earned - w.advancePaid;
+          payrollBody.innerHTML += `
+            <tr>
+              <td>${w.name}</td>
+              <td>₹ ${w.rate.toFixed(2)}</td>
+              <td>${w.daysWorked}</td>
+              <td>₹ ${earned.toFixed(2)}</td>
+              <td>₹ ${w.advancePaid.toFixed(2)}</td>
+              <td style="font-weight:bold; color:${net >= 0 ? 'green' : 'red'};">₹ ${net.toFixed(2)}</td>
+              <td><button class="btn btn-warning" style="padding:2px 6px; font-size:12px;" onclick="resetWorkerAccount('${w.id}')">Settle / Reset</button></td>
+            </tr>`;
+        });
+      }
+
+      // 2. Category Tree & Flattened Options
+      const treeContainer = document.getElementById('category-tree-display');
+      treeContainer.innerHTML = '';
+      if (categoryTree.length === 0) {
+        treeContainer.innerHTML = '<p style="color:#777;">No product categories or sub-units added yet.</p>';
+      } else {
+        treeContainer.appendChild(buildTreeHTML(categoryTree));
+      }
+
+      // 3. Audit Logs
+      const auditBody = document.getElementById('audit-log-body');
+      auditBody.innerHTML = '';
+      if (auditLogs.length === 0) {
+        auditBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No audit logs performed yet.</td></tr>';
+      } else {
+        auditLogs.forEach(l => {
+          const badge = l.status.includes('THEFT') ? 'badge-alert' : 'badge-ok';
+          auditBody.innerHTML += `
+            <tr>
+              <td>${l.date}</td>
+              <td>${l.name}</td>
+              <td>${l.expected}</td>
+              <td>${l.actual}</td>
+              <td style="font-weight:bold;">${l.diff}</td>
+              <td><span class="${badge}">${l.status}</span></td>
+            </tr>`;
+        });
+      }
+
+      // 4. Price Match Table
+      const pmBody = document.getElementById('price-match-body');
+      pmBody.innerHTML = '';
       if (rawMaterials.length === 0) {
-        rmBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No raw material added.</td></tr>';
+        pmBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No raw material pricing recorded.</td></tr>';
       } else {
-        rawMaterials.forEach((r, idx) => {
-          rmBody.innerHTML += `
+        rawMaterials.forEach(r => {
+          const diff = r.rate - r.benchmark;
+          const badge = diff > 0 ? 'badge-alert' : 'badge-ok';
+          const label = diff > 0 ? 'OVER BENCHMARK' : (diff < 0 ? 'SAVING / BELOW TARGET' : 'MATCHED');
+          pmBody.innerHTML += `
             <tr>
-              <td>${r.name}</td>
-              <td>${r.stock.toFixed(2)}</td>
-              <td>${r.unit}</td>
-              <td>₹ ${r.rate ? r.rate.toFixed(2) : '0.00'}</td>
-              <td><button style="background:red; color:white; border:none; padding:3px 6px; border-radius:3px; cursor:pointer;" onclick="deleteRM(${idx})">Delete</button></td>
+              <td>${r.name} (${r.stock.toFixed(2)} ${r.unit})</td>
+              <td>₹ ${r.rate.toFixed(2)}</td>
+              <td>₹ ${r.benchmark.toFixed(2)}</td>
+              <td>₹ ${diff.toFixed(2)}</td>
+              <td><span class="${badge}">${label}</span></td>
             </tr>`;
         });
       }
 
-      // Finished Goods Stock Table
-      const goodsBody = document.getElementById('goods-stock-body');
-      goodsBody.innerHTML = '';
-      if (finishedGoods.length === 0) {
-        goodsBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No finished goods available.</td></tr>';
+      // 5. Invoices Tracker
+      const invBody = document.getElementById('invoice-tracker-body');
+      invBody.innerHTML = '';
+      if (savedInvoices.length === 0) {
+        invBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No invoices saved yet.</td></tr>';
       } else {
-        finishedGoods.forEach((g, idx) => {
-          goodsBody.innerHTML += `
+        const today = new Date().toISOString().split('T')[0];
+        savedInvoices.forEach(inv => {
+          const isOverdue = !inv.paid && inv.dueDate < today;
+          const statusBadge = inv.paid ? '<span class="badge-ok">PAID</span>' : (isOverdue ? '<span class="badge-alert">OVERDUE</span>' : '<span class="badge-pending">PENDING</span>');
+          invBody.innerHTML += `
             <tr>
-              <td>${g.name}</td>
-              <td>${g.stock}</td>
-              <td>${g.unit}</td>
-              <td>₹ ${g.price.toFixed(2)}</td>
-              <td><button style="background:red; color:white; border:none; padding:3px 6px; border-radius:3px; cursor:pointer;" onclick="deleteGoods(${idx})">Delete</button></td>
-            </tr>`;
-        });
-      }
-
-      // Price History Logs Table
-      const histBody = document.getElementById('price-history-body');
-      histBody.innerHTML = '';
-      if (priceHistory.length === 0) {
-        histBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No price changes logged yet.</td></tr>';
-      } else {
-        priceHistory.forEach(h => {
-          const color = h.diff > 0 ? 'color:red; font-weight:bold;' : 'color:green; font-weight:bold;';
-          const symbol = h.diff > 0 ? '▲ +' : '▼ ';
-          histBody.innerHTML += `
-            <tr>
-              <td>${h.date}</td>
-              <td>${h.material}</td>
-              <td>₹ ${h.oldRate.toFixed(2)}</td>
-              <td>₹ ${h.newRate.toFixed(2)}</td>
-              <td style="${color}">${symbol}₹ ${Math.abs(h.diff).toFixed(2)}</td>
-            </tr>`;
-        });
-      }
-
-      // Worker Allocations Table
-      const wbBody = document.getElementById('worker-stock-body');
-      wbBody.innerHTML = '';
-      const activeBals = workerBalances.filter(b => b.qty > 0);
-      if (activeBals.length === 0) {
-        wbBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No material currently assigned to workers.</td></tr>';
-      } else {
-        activeBals.forEach(b => {
-          wbBody.innerHTML += `
-            <tr>
-              <td>${b.worker}</td>
-              <td>${b.rmName}</td>
-              <td>${b.qty.toFixed(2)}</td>
-              <td>${b.unit}</td>
+              <td>${inv.no}</td>
+              <td>${inv.customer}</td>
+              <td>${inv.date}</td>
+              <td>${inv.dueDate}</td>
+              <td>₹ ${inv.amount.toFixed(2)}</td>
+              <td>${statusBadge}</td>
+              <td>
+                ${!inv.paid ? `<button class="btn" style="padding:2px 6px; font-size:12px;" onclick="markInvoicePaid('${inv.no}')">Mark Paid</button>` : 'Complete'}
+              </td>
             </tr>`;
         });
       }
@@ -762,53 +815,86 @@
       updateDropdowns();
     }
 
+    function buildTreeHTML(nodes) {
+      const ul = document.createElement('div');
+      nodes.forEach(node => {
+        const div = document.createElement('div');
+        div.className = 'tree-node';
+        div.innerHTML = `<strong>• ${node.name}</strong> — Stock: <code>${node.stock} pcs</code> | Price: <code>₹${node.price.toFixed(2)}</code>`;
+        if (node.children && node.children.length > 0) {
+          div.appendChild(buildTreeHTML(node.children));
+        }
+        ul.appendChild(div);
+      });
+      return ul;
+    }
+
     function updateDropdowns() {
+      // Workers
+      const attWorker = document.getElementById('att-worker-select');
       const issueWorker = document.getElementById('issue-worker-select');
-      const prodWorker = document.getElementById('prod-worker-select');
-      const issueRm = document.getElementById('issue-rm-select');
-      const prodRm = document.getElementById('prod-rm-select');
-      const invoiceSelect = document.getElementById('invoice-item-select');
-
+      attWorker.innerHTML = '<option value="">-- Select Worker --</option>';
       issueWorker.innerHTML = '<option value="">-- Select Worker --</option>';
-      prodWorker.innerHTML = '<option value="">-- Select Worker --</option>';
       workers.forEach(w => {
-        issueWorker.innerHTML += `<option value="${w}">${w}</option>`;
-        prodWorker.innerHTML += `<option value="${w}">${w}</option>`;
+        attWorker.innerHTML += `<option value="${w.id}">${w.name}</option>`;
+        issueWorker.innerHTML += `<option value="${w.id}">${w.name}</option>`;
       });
 
+      // Raw Materials
+      const issueRm = document.getElementById('issue-rm-select');
+      const auditRm = document.getElementById('audit-rm-select');
       issueRm.innerHTML = '<option value="">-- Select Raw Material --</option>';
-      prodRm.innerHTML = '<option value="">-- Select Raw Material --</option>';
-      rawMaterials.forEach((r, idx) => {
-        issueRm.innerHTML += `<option value="${idx}">${r.name} (${r.stock.toFixed(2)} ${r.unit})</option>`;
-        prodRm.innerHTML += `<option value="${idx}">${r.name} (${r.unit})</option>`;
+      auditRm.innerHTML = '<option value="">-- Select Raw Material --</option>';
+      rawMaterials.forEach(r => {
+        issueRm.innerHTML += `<option value="${r.id}">${r.name} (${r.stock.toFixed(2)} ${r.unit})</option>`;
+        auditRm.innerHTML += `<option value="${r.id}">${r.name}</option>`;
       });
 
-      invoiceSelect.innerHTML = '<option value="">-- Select Goods --</option>';
-      finishedGoods.forEach((g, idx) => {
-        invoiceSelect.innerHTML += `<option value="${idx}">${g.name} (Stock: ${g.stock} pcs - ₹${g.price})</option>`;
+      // Parent Categories & Invoice Goods Dropdowns
+      const parentSelect = document.getElementById('parent-cat-select');
+      const invoiceSelect = document.getElementById('invoice-item-select');
+      parentSelect.innerHTML = '<option value="root">-- Root (Main Item e.g., Apple / Box) --</option>';
+      invoiceSelect.innerHTML = '<option value="">-- Select Goods Variant --</option>';
+      
+      const flatCategories = [];
+      flattenCategories(categoryTree, flatCategories, '');
+      flatCategories.forEach(c => {
+        parentSelect.innerHTML += `<option value="${c.id}">${c.path}</option>`;
+        invoiceSelect.innerHTML += `<option value="${c.id}">${c.path} (Stock: ${c.stock} pcs - ₹${c.price})</option>`;
       });
     }
 
-    // INVOICE LOGIC
+    function flattenCategories(nodes, list, prefix) {
+      nodes.forEach(node => {
+        const currentPath = prefix ? `${prefix} ➔ ${node.name}` : node.name;
+        list.push({ id: node.id, path: currentPath, stock: node.stock, price: node.price, node });
+        if (node.children && node.children.length > 0) {
+          flattenCategories(node.children, list, currentPath);
+        }
+      });
+    }
+
+    // INVOICE & BILLING LOGIC
     function addToInvoice(e) {
       e.preventDefault();
-      const idx = document.getElementById('invoice-item-select').value;
+      const catId = document.getElementById('invoice-item-select').value;
       const qty = parseInt(document.getElementById('invoice-qty').value);
-      if (idx === "") return;
 
-      const item = finishedGoods[idx];
+      const item = findCategoryById(categoryTree, catId);
+      if (!item) return;
+
       if (item.stock < qty) {
-        alert("Insufficient finished goods stock!");
+        alert("Insufficient stock in this product stage/sub-category!");
         return;
       }
 
       item.stock -= qty;
-      localStorage.setItem('app_finished_goods', JSON.stringify(finishedGoods));
+      localStorage.setItem('app_category_tree', JSON.stringify(categoryTree));
 
       invoiceCart.push({
+        id: item.id,
         name: item.name,
         qty: qty,
-        unit: 'pcs',
         price: item.price,
         amount: item.price * qty
       });
@@ -821,7 +907,7 @@
       const cartBody = document.getElementById('cart-table-body');
       cartBody.innerHTML = '';
       if (invoiceCart.length === 0) {
-        cartBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No items added to invoice yet.</td></tr>';
+        cartBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No items added to invoice draft.</td></tr>';
         return;
       }
       invoiceCart.forEach((item, idx) => {
@@ -829,8 +915,7 @@
           <tr>
             <td>${idx + 1}</td>
             <td>${item.name}</td>
-            <td>${item.qty}</td>
-            <td>${item.unit}</td>
+            <td>${item.qty} pcs</td>
             <td>₹ ${item.price.toFixed(2)}</td>
             <td>₹ ${item.amount.toFixed(2)}</td>
           </tr>`;
@@ -844,6 +929,9 @@
       }
 
       const buyerName = document.getElementById('cust-name').value.trim() || 'Cash Customer';
+      const dueDate = document.getElementById('cust-due-date').value || new Date().toISOString().split('T')[0];
+      const invNo = 'INV-' + Math.floor(1000 + Math.random() * 9000);
+      
       const tallyBody = document.getElementById('tally-items-body');
       tallyBody.innerHTML = '';
       let grandTotal = 0;
@@ -861,16 +949,36 @@
           </tr>`;
       });
 
-      for (let i = invoiceCart.length; i < 8; i++) {
-        tallyBody.innerHTML += `<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>`;
-      }
+      savedInvoices.unshift({
+        no: invNo,
+        customer: buyerName,
+        date: new Date().toLocaleDateString('en-IN'),
+        dueDate: dueDate,
+        amount: grandTotal,
+        paid: false
+      });
+      localStorage.setItem('app_saved_invoices', JSON.stringify(savedInvoices));
 
       document.getElementById('tally-buyer-name').innerText = buyerName;
+      document.getElementById('tally-inv-no').innerText = invNo;
       document.getElementById('tally-inv-date').innerText = new Date().toLocaleDateString('en-IN');
+      document.getElementById('tally-due-date').innerText = dueDate;
       document.getElementById('tally-grand-total').innerText = grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
       document.getElementById('tally-words-amount').innerText = numberToWords(Math.round(grandTotal)) + " Rupees Only";
 
       document.getElementById('invoice-modal').style.display = 'block';
+      invoiceCart = [];
+      renderCart();
+      renderAll();
+    }
+
+    function markInvoicePaid(no) {
+      const inv = savedInvoices.find(i => i.no === no);
+      if (inv) {
+        inv.paid = true;
+        localStorage.setItem('app_saved_invoices', JSON.stringify(savedInvoices));
+        renderAll();
+      }
     }
 
     function closeInvoiceModal() {
