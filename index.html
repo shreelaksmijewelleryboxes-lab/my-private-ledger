@@ -3,499 +3,584 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Inventory, Manufacturing, Attendance & Billing System</title>
+  <title>Enterprise ERP - Manufacturing, Inventory, Orders & Accounting</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background-color: #f4f6f9; color: #333; padding: 15px; }
-    
-    /* Login & Setup Overlay */
-    #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 9999; }
-    .login-card { background: #fff; padding: 25px; border-radius: 8px; width: 90%; max-width: 380px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-    .login-card h2 { margin-bottom: 10px; font-size: 20px; }
-    .login-card p { font-size: 13px; color: #666; margin-bottom: 15px; }
-    .login-card input { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 15px; }
-    .login-card button { width: 100%; padding: 12px; background: #007bff; color: #fff; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; font-weight: 600; }
-    .login-card button:hover { opacity: 0.9; }
-    
+    :root {
+      --primary: #2c3e50;
+      --accent: #27ae60;
+      --warning: #f39c12;
+      --danger: #e74c3c;
+      --info: #2980b9;
+      --bg: #f4f6f9;
+      --card-bg: #ffffff;
+      --text: #333333;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* AUTH OVERLAY */
+    #login-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.92); display: flex; justify-content: center; align-items: center; z-index: 9999; }
+    .login-card { background: #fff; padding: 30px; border-radius: 8px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+    .login-card h2 { margin-bottom: 10px; color: var(--primary); }
+    .login-card p { font-size: 13px; color: #666; margin-bottom: 20px; }
+    .login-card input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; }
+    .login-card button { width: 100%; padding: 12px; background: var(--accent); color: #fff; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 15px; }
+
     .hidden { display: none !important; }
 
-    /* Main Layout */
-    .container { max-width: 1200px; margin: 0 auto; display: none; }
-    header { background: #1a252f; color: #fff; padding: 15px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    header h1 { font-size: 20px; }
-    header .header-btns { display: flex; gap: 10px; }
-    header button { border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; }
-    .btn-lock { background: #dc3545; color: white; }
-    .btn-change-pass { background: #17a2b8; color: white; }
-    
-    .grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
-    @media(min-width: 900px) { .grid { grid-template-columns: 1fr 1fr; } }
-    
-    .card { background: #fff; padding: 20px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-    .card h2 { font-size: 18px; margin-bottom: 15px; border-bottom: 2px solid #f4f6f9; padding-bottom: 8px; color: #1a252f; }
-    
-    /* Forms */
+    /* HEADER & STATS BAR */
+    header { background: var(--primary); color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { font-size: 20px; font-weight: 600; }
+    .header-btns button { background: rgba(255,255,255,0.15); border: none; color: white; padding: 8px 14px; border-radius: 4px; cursor: pointer; font-weight: 600; margin-left: 8px; }
+    .header-btns button:hover { background: rgba(255,255,255,0.25); }
+
+    .stats-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; padding: 20px 25px 0 25px; }
+    .stat-card { background: white; padding: 15px; border-radius: 6px; border-left: 4px solid var(--info); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .stat-card h4 { font-size: 12px; color: #64748b; text-transform: uppercase; margin-bottom: 5px; }
+    .stat-card .val { font-size: 20px; font-weight: bold; color: var(--primary); }
+
+    /* TAB NAVIGATION */
+    .nav-tabs { display: flex; background: #e2e8f0; padding: 10px 25px 0 25px; gap: 5px; border-bottom: 1px solid #cbd5e1; overflow-x: auto; }
+    .tab-btn { padding: 10px 20px; border: none; background: transparent; cursor: pointer; font-weight: 600; color: #64748b; border-radius: 6px 6px 0 0; white-space: nowrap; }
+    .tab-btn.active { background: white; color: var(--primary); border-top: 3px solid var(--accent); }
+
+    /* MAIN CONTAINER & PANELS */
+    .container { padding: 25px; flex: 1; max-width: 1400px; margin: 0 auto; width: 100%; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
+    .card { background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); margin-bottom: 20px; }
+    .card h2 { font-size: 16px; margin-bottom: 15px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; color: var(--primary); display: flex; justify-content: space-between; align-items: center; }
+
+    /* FORMS & INPUTS */
     .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; margin-bottom: 5px; font-size: 14px; font-weight: 600; }
-    .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
-    .btn { background: #28a745; color: #fff; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-size: 15px; width: 100%; font-weight: 600; }
-    .btn-secondary { background: #17a2b8; margin-top: 10px; }
-    .btn-warning { background: #ffc107; color: #000; }
-    .btn-danger { background: #dc3545; color: white; }
-    
-    /* Tables */
-    .table-responsive { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-    table th, table td { border: 1px solid #dee2e6; padding: 8px; text-align: left; }
-    table th { background-color: #e9ecef; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: #475569; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 9px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 14px; }
+    .form-row { display: flex; gap: 10px; }
+    .form-row .form-group { flex: 1; }
 
-    /* Badge & Alert Tags */
-    .badge-alert { background: #dc3545; color: #fff; padding: 3px 7px; border-radius: 4px; font-size: 11px; font-weight: bold; }
-    .badge-ok { background: #28a745; color: #fff; padding: 3px 7px; border-radius: 4px; font-size: 11px; font-weight: bold; }
-    .badge-pending { background: #ffc107; color: #000; padding: 3px 7px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+    .btn { background: var(--accent); color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: 600; width: 100%; font-size: 14px; }
+    .btn-warning { background: var(--warning); color: #000; }
+    .btn-danger { background: var(--danger); }
+    .btn-secondary { background: #64748b; }
+    .btn-sm { padding: 4px 8px; font-size: 12px; width: auto; display: inline-block; }
 
-    /* Tree View for Categories */
-    .tree-node { margin-left: 15px; border-left: 2px dashed #ccc; padding-left: 10px; margin-top: 5px; }
-    
-    /* Invoice Modal */
-    #invoice-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; overflow-y: auto; padding: 10px; }
-    .invoice-container { background: #fff; width: 100%; max-width: 800px; margin: 20px auto; padding: 20px; border-radius: 4px; }
-    .tally-box { border: 2px solid #000; padding: 15px; font-family: 'Courier New', Courier, monospace; background: #fff; color: #000; }
-    .tally-header { text-align: center; border-bottom: 1px solid #000; padding-bottom: 10px; }
-    .tally-header h2 { font-size: 22px; text-transform: uppercase; letter-spacing: 1px; }
-    .tally-header h3 { font-size: 18px; margin-top: 4px; }
-    .tally-details-grid { display: flex; border-bottom: 1px solid #000; }
-    .tally-col { flex: 1; padding: 8px; font-size: 13px; line-height: 1.4; }
-    .border-left { border-left: 1px solid #000; }
-    .tally-table { width: 100%; border-collapse: collapse; margin-top: 0; }
-    .tally-table th, .tally-table td { border: 1px solid #000; padding: 6px; font-size: 12px; }
-    .tally-table th { background: transparent; text-align: center; }
-    .tally-total-section { border-top: 1px solid #000; padding-top: 8px; margin-top: 10px; font-size: 13px; display: flex; justify-content: space-between; }
-    .tally-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 40px; }
-    .sign-box { text-align: center; font-size: 13px; }
+    /* TABLES */
+    .table-responsive { overflow-x: auto; margin-top: 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    table th, table td { border: 1px solid #e2e8f0; padding: 10px; text-align: left; }
+    table th { background: #f8fafc; color: #475569; font-weight: 600; }
 
-    @media print {
-      body * { visibility: hidden; }
-      #invoice-modal, #invoice-modal * { visibility: visible; }
-      #invoice-modal { position: absolute; left: 0; top: 0; width: 100%; background: none; padding: 0; }
-      .no-print { display: none !important; }
-      .tally-box { border: 2px solid #000 !important; }
-    }
+    /* BADGES */
+    .badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white; display: inline-block; }
+    .badge-success { background: var(--accent); }
+    .badge-danger { background: var(--danger); }
+    .badge-warning { background: var(--warning); color: #000; }
+    .badge-info { background: var(--info); }
+
+    /* TREE VIEW */
+    .tree-node { margin-left: 20px; border-left: 2px dashed #cbd5e1; padding-left: 10px; margin-top: 8px; }
+    .tree-item { background: #f8fafc; padding: 8px; border-radius: 4px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+
+    /* DYNAMIC ROW */
+    .dynamic-row { display: flex; gap: 10px; margin-bottom: 8px; align-items: center; }
+
+    /* MODAL */
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; overflow-y: auto; padding: 20px; }
+    .modal-content { background: white; max-width: 800px; margin: 30px auto; padding: 25px; border-radius: 8px; }
   </style>
 </head>
 <body>
 
-  <!-- DYNAMIC AUTH / PASSWORD OVERLAY -->
+  <!-- AUTH SYSTEM OVERLAY -->
   <div id="login-overlay">
     <div class="login-card">
       <div id="setup-form-container" class="hidden">
-        <h2>Welcome! First-Time Setup</h2>
-        <p>Set a master password for your system.</p>
-        <input type="password" id="setup-pass-input" placeholder="Create New Password">
-        <input type="password" id="setup-confirm-input" placeholder="Confirm New Password">
-        <button onclick="saveInitialPassword()">Set Master Password</button>
-        <p id="setup-error" style="color:red; margin-top:10px; display:none; font-size:13px;"></p>
+        <h2>Initial System Setup</h2>
+        <p>Create your Permanent Master Password.</p>
+        <input type="password" id="setup-pass" placeholder="Master Password">
+        <input type="password" id="setup-confirm" placeholder="Confirm Master Password">
+        <button onclick="saveMasterPassword()">Save Master Password</button>
       </div>
 
       <div id="login-form-container" class="hidden">
-        <h2>Enter Password</h2>
-        <p>Enter your password to unlock the tool.</p>
-        <input type="password" id="password-input" placeholder="Password" onkeydown="if(event.key==='Enter') login()">
-        <button onclick="login()">Log In</button>
-        <p id="login-error" style="color:red; margin-top:10px; display:none; font-size:13px;">Incorrect Password</p>
-      </div>
-
-      <div id="change-form-container" class="hidden">
-        <h2>Change Master Password</h2>
-        <p>Update your access password below.</p>
-        <input type="password" id="curr-pass-input" placeholder="Current Password">
-        <input type="password" id="new-pass-input" placeholder="New Password">
-        <button onclick="updatePassword()">Update Password</button>
-        <button onclick="closeChangeModal()" style="background:#6c757d; margin-top:8px;">Cancel</button>
-        <p id="change-error" style="color:red; margin-top:10px; display:none; font-size:13px;"></p>
+        <h2>Enter Master Password</h2>
+        <p>Authentication required to access ERP dashboard.</p>
+        <input type="password" id="login-pass" placeholder="Password" onkeydown="if(event.key==='Enter') login()">
+        <button onclick="login()">Unlock Application</button>
+        <p id="login-err" style="color:red; margin-top:10px; display:none; font-size:12px;">Incorrect Password</p>
       </div>
     </div>
   </div>
 
-  <!-- MAIN APP CONTAINER -->
-  <div class="container" id="app-container">
-    <header>
-      <h1>Inventory, Manufacturing & Attendance Management</h1>
-      <div class="header-btns">
-        <button class="btn-change-pass" onclick="openChangeModal()">Change Password</button>
-        <button class="btn-lock" onclick="logout()">Lock Application</button>
-      </div>
-    </header>
+  <!-- HEADER & STATS -->
+  <header>
+    <h1>Enterprise ERP & Manufacturing Dashboard</h1>
+    <div class="header-btns">
+      <button onclick="openColumnCustomizer()">⚙️ Custom Columns UI</button>
+      <button onclick="logout()">🔒 Lock ERP</button>
+    </div>
+  </header>
 
-    <div class="grid">
-      <!-- 1. WORKER & STAFF ATTENDANCE SETUP -->
+  <div class="stats-bar">
+    <div class="stat-card">
+      <h4>Inventory Value</h4>
+      <div class="val" id="stat-inv-val">₹ 0.00</div>
+    </div>
+    <div class="stat-card" style="border-color: var(--warning);">
+      <h4>Pending Orders Value</h4>
+      <div class="val" id="stat-pending-orders">₹ 0.00</div>
+    </div>
+    <div class="stat-card" style="border-color: var(--accent);">
+      <h4>Debtors (Receivables)</h4>
+      <div class="val" id="stat-debtors">₹ 0.00</div>
+    </div>
+    <div class="stat-card" style="border-color: var(--danger);">
+      <h4>Creditors (Payables)</h4>
+      <div class="val" id="stat-creditors">₹ 0.00</div>
+    </div>
+  </div>
+
+  <!-- NAVIGATION TABS -->
+  <div class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('tab-inventory')">📦 SKUs & Sub-Categories</button>
+    <button class="tab-btn" onclick="switchTab('tab-orders')">📋 Customer Orders (Pending & Fulfilled)</button>
+    <button class="tab-btn" onclick="switchTab('tab-workers')">👷 Staff, Payroll & Activity</button>
+    <button class="tab-btn" onclick="switchTab('tab-production')">🏭 Production & Theft Audit</button>
+    <button class="tab-btn" onclick="switchTab('tab-accounts')">📖 Ledger & Daily Expenses</button>
+    <button class="tab-btn" onclick="switchTab('tab-billing')">🧾 Invoicing & Reminders</button>
+  </div>
+
+  <div class="container">
+
+    <!-- TAB 1: INFINITE SKUs, SUB-CATEGORIES & RAW MATERIAL -->
+    <div id="tab-inventory" class="tab-panel active">
+      <div class="grid">
+        <div class="card">
+          <h2>Unlimited Product SKU & Sub-Category Builder</h2>
+          <form onsubmit="addCategoryItem(event)">
+            <div class="form-group">
+              <label>Parent Category / Stage (Choose 'Root' for top-level item)</label>
+              <select id="sku-parent-select"><option value="root">-- Root SKU --</option></select>
+            </div>
+            <div class="form-group">
+              <label>Sub-Category / Stage / Variant Name</label>
+              <input type="text" id="sku-name" placeholder="e.g. Empty Box / Red Royal / Taped Stage" required>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Stock Quantity</label>
+                <input type="number" id="sku-stock" value="0" min="0" required>
+              </div>
+              <div class="form-group">
+                <label>Unit Price (₹)</label>
+                <input type="number" id="sku-price" step="0.01" value="0.00" required>
+              </div>
+            </div>
+            <button type="submit" class="btn">Add SKU / Sub-Category</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>Raw Material Purchase & Price Inflation Radar</h2>
+          <form onsubmit="addRawMaterial(event)">
+            <div class="form-group">
+              <label>Raw Material Description</label>
+              <input type="text" id="rm-name" placeholder="e.g. Tape Roll 2-inch" required>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Purchase Rate (₹)</label>
+                <input type="number" id="rm-rate" step="0.01" required>
+              </div>
+              <div class="form-group">
+                <label>Stock Bought</label>
+                <input type="number" id="rm-stock" step="0.01" required>
+              </div>
+              <div class="form-group">
+                <label>Unit</label>
+                <input type="text" id="rm-unit" placeholder="meters, pcs, kg" required>
+              </div>
+            </div>
+            <button type="submit" class="btn">Record Raw Material Stock</button>
+          </form>
+        </div>
+      </div>
+
       <div class="card">
-        <h2>1. Staff Directory & Daily Wage Setup</h2>
-        <form id="worker-form" onsubmit="addWorker(event)">
-          <div class="form-group">
-            <label>Worker Name / ID</label>
-            <input type="text" id="worker-name" placeholder="e.g. John Doe (W-101)" required>
-          </div>
-          <div class="form-group">
-            <label>Daily Wage Rate (₹)</label>
-            <input type="number" id="worker-rate" step="0.01" placeholder="e.g. 500.00" required>
-          </div>
-          <button type="submit" class="btn">Register Worker</button>
-        </form>
+        <h2>SKU Sub-Category Hierarchy Tree</h2>
+        <div id="sku-tree-display"></div>
       </div>
 
-      <!-- 2. RECORD ATTENDANCE & ADVANCES -->
       <div class="card">
-        <h2>2. Record Daily Attendance & Salary Advances</h2>
-        <form id="attendance-form" onsubmit="recordAttendance(event)">
-          <div class="form-group">
-            <label>Select Worker</label>
-            <select id="att-worker-select" required></select>
-          </div>
-          <div class="form-group">
-            <label>Attendance Status</label>
-            <select id="att-status">
-              <option value="1.0">Full Day Present</option>
-              <option value="0.5">Half Day Present</option>
-              <option value="0.0">Absent</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Advance Payment Paid Today (₹)</label>
-            <input type="number" id="att-advance" step="0.01" placeholder="0.00" value="0">
-          </div>
-          <button type="submit" class="btn btn-warning">Save Attendance Log</button>
-        </form>
+        <h2>Raw Material Purchase Price Change & Surge Radar</h2>
+        <div class="table-responsive">
+          <table id="tbl-price-radar">
+            <thead>
+              <tr>
+                <th class="col-rm">Material</th>
+                <th class="col-oldrate">Previous Rate</th>
+                <th class="col-newrate">New Rate</th>
+                <th class="col-diff">Price Change (₹)</th>
+                <th class="col-status">Status</th>
+              </tr>
+            </thead>
+            <tbody id="price-radar-body"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <!-- STAFF SALARY & ATTENDANCE SUMMARY -->
-    <div class="card">
-      <h2>Staff Attendance & Payroll Statement</h2>
-      <div class="table-responsive">
-        <table>
-          <thead>
-            <tr>
-              <th>Worker Name</th>
-              <th>Daily Wage</th>
-              <th>Days Worked</th>
-              <th>Earned Salary (₹)</th>
-              <th>Advances Paid (₹)</th>
-              <th>Net Due Salary (₹)</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="payroll-table-body">
-            <tr><td colspan="7" style="text-align:center;">No workers registered.</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <!-- TAB 2: PENDING & RECEIVED ORDERS -->
+    <div id="tab-orders" class="tab-panel">
+      <div class="grid">
+        <div class="card">
+          <h2>Book New Customer Order (Pending Order)</h2>
+          <form onsubmit="createOrder(event)">
+            <div class="form-group">
+              <label>Customer Name</label>
+              <input type="text" id="ord-cust" required>
+            </div>
+            <div class="form-group">
+              <label>Select Product / SKU Stage</label>
+              <select id="ord-sku-select" required></select>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Order Quantity (pcs)</label>
+                <input type="number" id="ord-qty" min="1" value="1" required>
+              </div>
+              <div class="form-group">
+                <label>Agreed Price / Unit (₹)</label>
+                <input type="number" id="ord-price" step="0.01" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Expected Delivery / Due Date</label>
+              <input type="date" id="ord-due-date" required>
+            </div>
+            <button type="submit" class="btn btn-warning">Save Order as Pending</button>
+          </form>
+        </div>
 
-    <div class="grid">
-      <!-- 3. RAW MATERIAL STOCK WITH PRICE MATCH TARGET -->
+        <div class="card">
+          <h2>Order Fulfillment & Dispatch Overview</h2>
+          <p style="font-size:13px; color:#666; margin-bottom:10px;">Fulfilling an order automatically deducts the items from finished goods stock and generates an active receivable ledger entry.</p>
+        </div>
+      </div>
+
       <div class="card">
-        <h2>3. Raw Material Purchase & Benchmark Target</h2>
-        <form id="rm-form" onsubmit="addRawMaterial(event)">
-          <div class="form-group">
-            <label>Material Description</label>
-            <input type="text" id="rm-name" placeholder="e.g. Cardboard Sheet" required>
-          </div>
-          <div class="form-group">
-            <label>Purchase Price per Unit (₹)</label>
-            <input type="number" id="rm-rate" step="0.01" placeholder="0.00" required>
-          </div>
-          <div class="form-group">
-            <label>Target Price / Benchmark Rate (₹)</label>
-            <input type="number" id="rm-benchmark" step="0.01" placeholder="e.g. Expected Market Rate" required>
-          </div>
-          <div class="form-group">
-            <label>Quantity Bought</label>
-            <input type="number" id="rm-stock" step="0.01" placeholder="0.00" required>
-          </div>
-          <div class="form-group">
-            <label>Unit</label>
-            <select id="rm-unit">
-              <option value="meters">Meters (m)</option>
-              <option value="pcs">Pieces (pcs)</option>
-              <option value="kg">Kilograms (kg)</option>
-            </select>
-          </div>
-          <button type="submit" class="btn">Save Raw Material Stock</button>
-        </form>
+        <h2>Order Register (Pending vs. Fulfilled)</h2>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Product</th>
+                <th>Qty</th>
+                <th>Total Value (₹)</th>
+                <th>Due Date</th>
+                <th>Order Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="orders-list-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: STAFF, WORKLOG & ATTENDANCE -->
+    <div id="tab-workers" class="tab-panel">
+      <div class="grid">
+        <div class="card">
+          <h2>Add Worker / Staff Member</h2>
+          <form onsubmit="addWorker(event)">
+            <div class="form-group">
+              <label>Worker Name / Employee ID</label>
+              <input type="text" id="worker-name" required>
+            </div>
+            <div class="form-group">
+              <label>Daily Wage Rate (₹)</label>
+              <input type="number" id="worker-wage" step="0.01" required>
+            </div>
+            <button type="submit" class="btn">Register Staff</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>Daily Attendance, Task Activity & Salary Advances</h2>
+          <form onsubmit="recordAttendance(event)">
+            <div class="form-group">
+              <label>Select Worker</label>
+              <select id="att-worker-select" required></select>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Status</label>
+                <select id="att-status">
+                  <option value="1">Full Day</option>
+                  <option value="0.5">Half Day</option>
+                  <option value="0">Absent</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Advance Paid Today (₹)</label>
+                <input type="number" id="att-advance" step="0.01" value="0">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Current Assigned Work Activity</label>
+              <input type="text" id="att-task" placeholder="e.g. Taping Box Type 1">
+            </div>
+            <button type="submit" class="btn btn-warning">Save Attendance Log</button>
+          </form>
+        </div>
       </div>
 
-      <!-- 4. MULTI-LEVEL PRODUCT & PROCESS CATEGORIES -->
       <div class="card">
-        <h2>4. Multi-Level Item Process & Variants</h2>
-        <form id="category-form" onsubmit="addCategory(event)">
-          <div class="form-group">
-            <label>Parent Category / Stage (Select 'Root' for main item)</label>
-            <select id="parent-cat-select">
-              <option value="root">-- Root (Main Item e.g., Apple / Box) --</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Sub-Category / Stage / Variant Name</label>
-            <input type="text" id="cat-name" placeholder="e.g. Empty Box / Taped / Ready Type A" required>
-          </div>
-          <div class="form-group">
-            <label>Initial Stock (pcs)</label>
-            <input type="number" id="cat-stock" value="0" min="0" required>
-          </div>
-          <div class="form-group">
-            <label>Unit Price (₹)</label>
-            <input type="number" id="cat-price" step="0.01" value="0.00" required>
-          </div>
-          <button type="submit" class="btn">Add Sub-Category / Process</button>
-        </form>
+        <h2>Staff Payroll & Activity Ledger</h2>
+        <div class="table-responsive">
+          <table id="tbl-payroll">
+            <thead>
+              <tr>
+                <th class="col-wname">Worker Name</th>
+                <th class="col-wwage">Daily Wage</th>
+                <th class="col-wdays">Days Worked</th>
+                <th class="col-wtask">Current Activity / Task</th>
+                <th class="col-wearned">Earned (₹)</th>
+                <th class="col-wadv">Advances (₹)</th>
+                <th class="col-wnet">Net Pending Wage (₹)</th>
+              </tr>
+            </thead>
+            <tbody id="payroll-body"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <!-- HIERARCHICAL ITEM CATEGORY STOCK TREE -->
-    <div class="card">
-      <h2>Nested Item & Sub-Category Inventory Tree</h2>
-      <div id="category-tree-display" style="padding: 10px; background: #fafafa; border: 1px solid #ddd; border-radius: 4px;">
-        <p style="color:#777;">No product categories or sub-units added yet.</p>
-      </div>
-    </div>
+    <!-- TAB 4: PRODUCTION & CONSUMPTION VARIANCE -->
+    <div id="tab-production" class="tab-panel">
+      <div class="grid">
+        <div class="card">
+          <h2>Issue N Raw Materials to Worker</h2>
+          <form onsubmit="issueMaterialsToWorker(event)">
+            <div class="form-group">
+              <label>Worker</label>
+              <select id="issue-worker-select" required></select>
+            </div>
+            <div id="issue-material-container">
+              <div class="dynamic-row">
+                <select class="issue-rm-dropdown" required></select>
+                <input type="number" class="issue-rm-qty" placeholder="Qty" step="0.01" required>
+              </div>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="addIssueMaterialRow()" style="margin-bottom:10px;">+ Add Material</button>
+            <button type="submit" class="btn btn-warning">Issue Raw Materials</button>
+          </form>
+        </div>
 
-    <div class="grid">
-      <!-- 5. ISSUE MATERIAL & AUDIT THEFT -->
+        <div class="card">
+          <h2>Receive Finished Goods & Track Material Consumption</h2>
+          <form onsubmit="receiveFinishedGoods(event)">
+            <div class="form-group">
+              <label>Worker</label>
+              <select id="rec-worker-select" required></select>
+            </div>
+            <div class="form-group">
+              <label>Finished Product / SKU Stage Received</label>
+              <select id="rec-sku-select" required></select>
+            </div>
+            <div class="form-group">
+              <label>Quantity Received (pcs)</label>
+              <input type="number" id="rec-qty" min="1" required>
+            </div>
+            
+            <label style="font-size:13px; font-weight:bold; margin-top:10px; display:block;">Raw Materials Consumed:</label>
+            <div id="rec-material-container">
+              <div class="dynamic-row">
+                <select class="rec-rm-dropdown" required></select>
+                <input type="number" class="rec-rm-qty" placeholder="Total Material Consumed" step="0.01" required>
+              </div>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="addRecMaterialRow()" style="margin-bottom:10px;">+ Add Consumed Material</button>
+            
+            <button type="submit" class="btn">Register Finished Production</button>
+          </form>
+        </div>
+      </div>
+
       <div class="card">
-        <h2>5. Issue Material to Worker</h2>
-        <form id="issue-form" onsubmit="issueMaterialToWorker(event)">
-          <div class="form-group">
-            <label>Select Worker</label>
-            <select id="issue-worker-select" required></select>
-          </div>
-          <div class="form-group">
-            <label>Select Raw Material</label>
-            <select id="issue-rm-select" required></select>
-          </div>
-          <div class="form-group">
-            <label>Quantity to Issue</label>
-            <input type="number" id="issue-qty" step="0.01" min="0.01" placeholder="0.00" required>
-          </div>
-          <button type="submit" class="btn btn-warning">Issue Material</button>
-        </form>
-      </div>
-
-      <!-- 6. RAW MATERIAL AUDIT & LOSS INSPECTOR -->
-      <div class="card">
-        <h2>6. Audit Material Physical Count / Loss</h2>
-        <form id="audit-form" onsubmit="auditMaterialStock(event)">
-          <div class="form-group">
-            <label>Select Material</label>
-            <select id="audit-rm-select" required></select>
-          </div>
-          <div class="form-group">
-            <label>Actual Physical Quantity Measured</label>
-            <input type="number" id="audit-actual-qty" step="0.01" placeholder="0.00" required>
-          </div>
-          <button type="submit" class="btn btn-danger">Run Theft & Loss Audit</button>
-        </form>
+        <h2>Consumption Variance & Theft Audit Log</h2>
+        <div class="table-responsive">
+          <table id="tbl-consumption-variance">
+            <thead>
+              <tr>
+                <th class="col-cdate">Date</th>
+                <th class="col-cworker">Worker</th>
+                <th class="col-cprod">Product</th>
+                <th class="col-crm">Material</th>
+                <th class="col-cprev">Previous Usage/Unit</th>
+                <th class="col-ccurr">Current Usage/Unit</th>
+                <th class="col-cstatus">Variance Status</th>
+              </tr>
+            </thead>
+            <tbody id="consumption-variance-body"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <!-- MATERIAL AUDIT & DISCREPANCY LOG -->
-    <div class="card">
-      <h2>Raw Material Discrepancy & Anti-Theft Audit Log</h2>
-      <div class="table-responsive">
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Material</th>
-              <th>System Stock</th>
-              <th>Physical Count</th>
-              <th>Variance / Discrepancy</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="audit-log-body">
-            <tr><td colspan="6" style="text-align:center;">No audit logs performed yet.</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <!-- TAB 5: ACCOUNTING LEDGER -->
+    <div id="tab-accounts" class="tab-panel">
+      <div class="grid">
+        <div class="card">
+          <h2>Record Daily Expense / Debit / Credit Transaction</h2>
+          <form onsubmit="addLedgerEntry(event)">
+            <div class="form-group">
+              <label>Entity / Account Name</label>
+              <input type="text" id="acc-entity" placeholder="e.g. Electricity Bill / Supplier X" required>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Category Type</label>
+                <select id="acc-type">
+                  <option value="debtor">Debtor (Receivable)</option>
+                  <option value="creditor">Creditor (Payable)</option>
+                  <option value="expense">Daily Expense</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Entry Type</label>
+                <select id="acc-flow">
+                  <option value="debit">Debit (+ Amount)</option>
+                  <option value="credit">Credit (- Amount)</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Amount (₹)</label>
+              <input type="number" id="acc-amount" step="0.01" required>
+            </div>
+            <button type="submit" class="btn">Save Accounting Transaction</button>
+          </form>
+        </div>
 
-    <!-- PRICE MATCH VARIANCE REPORT -->
-    <div class="card">
-      <h2>Raw Material Price Match & Benchmark Variance</h2>
-      <div class="table-responsive">
-        <table>
-          <thead>
-            <tr>
-              <th>Material</th>
-              <th>Last Purchase Rate (₹)</th>
-              <th>Benchmark Target (₹)</th>
-              <th>Variance (₹)</th>
-              <th>Price Match Status</th>
-            </tr>
-          </thead>
-          <tbody id="price-match-body">
-            <tr><td colspan="5" style="text-align:center;">No raw material pricing recorded.</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- BILLING SECTION & DUE DATE REMINDERS -->
-    <div class="card">
-      <h2>7. Generate Invoice with Due Date Reminders</h2>
-      <form id="invoice-form" onsubmit="addToInvoice(event)">
-        <div class="grid">
-          <div class="form-group">
-            <label>Customer Name</label>
-            <input type="text" id="cust-name" placeholder="Buyer Name" required>
-          </div>
-          <div class="form-group">
-            <label>Payment Due Date</label>
-            <input type="date" id="cust-due-date" required>
-          </div>
-          <div class="form-group">
-            <label>Select Finished Goods Variant/Sub-Category</label>
-            <select id="invoice-item-select" required></select>
-          </div>
-          <div class="form-group">
-            <label>Quantity (pcs)</label>
-            <input type="number" id="invoice-qty" min="1" value="1" required>
+        <div class="card">
+          <h2>Debtors & Creditors Balance Summary</h2>
+          <div class="table-responsive">
+            <table id="tbl-ledger-balances">
+              <thead>
+                <tr>
+                  <th class="col-lentity">Account / Entity Name</th>
+                  <th class="col-lcat">Category</th>
+                  <th class="col-lbal">Current Outstanding Balance (₹)</th>
+                </tr>
+              </thead>
+              <tbody id="ledger-balances-body"></tbody>
+            </table>
           </div>
         </div>
-        <button type="submit" class="btn">Add Item to Invoice</button>
-      </form>
-
-      <div class="table-responsive" style="margin-top:15px;">
-        <table>
-          <thead>
-            <tr>
-              <th>S.No.</th>
-              <th>Description</th>
-              <th>Qty</th>
-              <th>Rate (₹)</th>
-              <th>Amount (₹)</th>
-            </tr>
-          </thead>
-          <tbody id="cart-table-body">
-            <tr><td colspan="5" style="text-align:center;">No items added to invoice draft.</td></tr>
-          </tbody>
-        </table>
       </div>
-      <button class="btn btn-secondary" onclick="generateTallyInvoice()" style="margin-top:10px;">Generate Tally ERP 9 Invoice</button>
     </div>
 
-    <!-- INVOICE & DUE DATE MONITOR TABLE -->
-    <div class="card">
-      <h2>Invoice Payment Status & Overdue Tracker</h2>
-      <div class="table-responsive">
-        <table>
-          <thead>
-            <tr>
-              <th>Inv #</th>
-              <th>Customer</th>
-              <th>Date Issued</th>
-              <th>Due Date</th>
-              <th>Amount (₹)</th>
-              <th>Payment Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody id="invoice-tracker-body">
-            <tr><td colspan="7" style="text-align:center;">No invoices saved yet.</td></tr>
-          </tbody>
-        </table>
+    <!-- TAB 6: INVOICING -->
+    <div id="tab-billing" class="tab-panel">
+      <div class="card">
+        <h2>Create Invoice with Due Date Tracker</h2>
+        <form onsubmit="addToInvoice(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Customer / Buyer Name</label>
+              <input type="text" id="inv-cust" required>
+            </div>
+            <div class="form-group">
+              <label>Payment Due Date</label>
+              <input type="date" id="inv-due-date" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Select Item Variant / Stage</label>
+              <select id="inv-sku-select" required></select>
+            </div>
+            <div class="form-group">
+              <label>Quantity</label>
+              <input type="number" id="inv-qty" min="1" value="1" required>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-secondary">Add Item to Cart</button>
+        </form>
+
+        <div class="table-responsive" style="margin-top:15px;">
+          <table>
+            <thead>
+              <tr><th>Item Description</th><th>Qty</th><th>Unit Price</th><th>Amount</th></tr>
+            </thead>
+            <tbody id="cart-body"></tbody>
+          </table>
+        </div>
+        <button class="btn" style="margin-top:10px;" onclick="generateInvoice()">Generate & Record Invoice</button>
+      </div>
+
+      <div class="card">
+        <h2>Invoice Payment Monitor</h2>
+        <div class="table-responsive">
+          <table id="tbl-invoices">
+            <thead>
+              <tr>
+                <th class="col-inno">Invoice No</th>
+                <th class="col-incust">Customer</th>
+                <th class="col-indue">Due Date</th>
+                <th class="col-inamt">Amount (₹)</th>
+                <th class="col-instat">Payment Status</th>
+                <th class="col-inact">Action</th>
+              </tr>
+            </thead>
+            <tbody id="invoice-tracker-body"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
   </div>
 
-  <!-- TALLY ERP 9 INVOICE MODAL -->
-  <div id="invoice-modal">
-    <div class="invoice-container">
-      <div class="no-print" style="margin-bottom:15px; display:flex; gap:10px;">
-        <button class="btn" onclick="window.print()">Print Invoice</button>
-        <button class="btn btn-secondary" onclick="closeInvoiceModal()">Close</button>
-      </div>
-
-      <div class="tally-box">
-        <div class="tally-header">
-          <h2>TAX INVOICE</h2>
-          <h3 id="tally-comp-name">YOUR COMPANY NAME</h3>
-          <p id="tally-comp-address">Address / Contact details here</p>
-        </div>
-
-        <div class="tally-details-grid">
-          <div class="tally-col">
-            <strong>Buyer (Bill to):</strong><br>
-            <span id="tally-buyer-name">-</span>
-          </div>
-          <div class="tally-col border-left">
-            <strong>Invoice No:</strong> <span id="tally-inv-no">101</span><br>
-            <strong>Date:</strong> <span id="tally-inv-date"></span><br>
-            <strong>Payment Due Date:</strong> <span id="tally-due-date"></span>
-          </div>
-        </div>
-
-        <table class="tally-table">
-          <thead>
-            <tr>
-              <th style="width: 8%;">S.No.</th>
-              <th>Description of Goods</th>
-              <th style="width: 15%;">Quantity</th>
-              <th style="width: 15%;">Rate (₹)</th>
-              <th style="width: 10%;">per</th>
-              <th style="width: 18%;">Amount (₹)</th>
-            </tr>
-          </thead>
-          <tbody id="tally-items-body"></tbody>
-        </table>
-
-        <div class="tally-total-section">
-          <div>
-            <strong>Amount (in words):</strong><br>
-            <span id="tally-words-amount">Zero Rupees</span>
-          </div>
-          <div style="text-align: right;">
-            <strong>Total: ₹ <span id="tally-grand-total">0.00</span></strong>
-          </div>
-        </div>
-
-        <div class="tally-footer">
-          <div>
-            <p style="font-size: 11px;">Declaration: Goods once sold will not be taken back.</p>
-          </div>
-          <div class="sign-box">
-            <p>For YOUR COMPANY NAME</p>
-            <br><br>
-            <p>Authorised Signatory</p>
-          </div>
-        </div>
-      </div>
+  <!-- DYNAMIC COLUMN CUSTOMIZER MODAL -->
+  <div id="customizer-modal" class="modal">
+    <div class="modal-content">
+      <h2>In-App UI & Table Column Editor</h2>
+      <p style="font-size:13px; color:#666; margin-bottom:15px;">Hide or show columns in real-time across your application screens.</p>
+      <div id="column-checkboxes-container"></div>
+      <button class="btn" onclick="closeColumnCustomizer()" style="margin-top:15px;">Save Interface Settings</button>
     </div>
   </div>
 
   <script>
-    // APP STATE PERSISTENCE
-    let workers = JSON.parse(localStorage.getItem('app_workers_v2')) || [];
-    let rawMaterials = JSON.parse(localStorage.getItem('app_raw_materials_v2')) || [];
-    let categoryTree = JSON.parse(localStorage.getItem('app_category_tree')) || [];
-    let auditLogs = JSON.parse(localStorage.getItem('app_audit_logs')) || [];
-    let savedInvoices = JSON.parse(localStorage.getItem('app_saved_invoices')) || [];
-    let invoiceCart = [];
+    // GLOBAL STATE
+    let skuTree = JSON.parse(localStorage.getItem('erp_sku_tree')) || [];
+    let rawMaterials = JSON.parse(localStorage.getItem('erp_raw_materials')) || [];
+    let priceRadar = JSON.parse(localStorage.getItem('erp_price_radar')) || [];
+    let workers = JSON.parse(localStorage.getItem('erp_workers')) || [];
+    let usageAudit = JSON.parse(localStorage.getItem('erp_usage_audit')) || [];
+    let ledger = JSON.parse(localStorage.getItem('erp_ledger')) || [];
+    let invoices = JSON.parse(localStorage.getItem('erp_invoices')) || [];
+    let orders = JSON.parse(localStorage.getItem('erp_orders')) || [];
+    let columnVisibility = JSON.parse(localStorage.getItem('erp_column_visibility')) || {};
+    let activeCart = [];
 
-    // AUTH SYSTEM
+    // AUTHENTICATION SYSTEM
     window.addEventListener('DOMContentLoaded', () => {
-      const storedPassword = localStorage.getItem('system_master_password');
-      const isAuthenticated = sessionStorage.getItem('app_is_authenticated');
+      const storedPass = localStorage.getItem('system_master_pass');
+      const auth = sessionStorage.getItem('system_authenticated');
 
-      if (isAuthenticated === 'true') {
-        showApp();
+      if (auth === 'true') {
+        document.getElementById('login-overlay').style.display = 'none';
       } else {
         document.getElementById('login-overlay').style.display = 'flex';
-        document.getElementById('app-container').style.display = 'none';
-
-        if (!storedPassword) {
+        if (!storedPass) {
           document.getElementById('setup-form-container').classList.remove('hidden');
         } else {
           document.getElementById('login-form-container').classList.remove('hidden');
@@ -504,500 +589,556 @@
       renderAll();
     });
 
-    function saveInitialPassword() {
-      const pass = document.getElementById('setup-pass-input').value;
-      const confirm = document.getElementById('setup-confirm-input').value;
-      const err = document.getElementById('setup-error');
-      if (!pass || pass !== confirm) {
-        err.innerText = "Passwords do not match or are empty.";
-        err.style.display = 'block';
-        return;
+    function saveMasterPassword() {
+      const pass = document.getElementById('setup-pass').value;
+      const confirm = document.getElementById('setup-confirm').value;
+      if (pass && pass === confirm) {
+        localStorage.setItem('system_master_pass', pass);
+        sessionStorage.setItem('system_authenticated', 'true');
+        document.getElementById('login-overlay').style.display = 'none';
+      } else {
+        alert("Passwords do not match!");
       }
-      localStorage.setItem('system_master_password', pass);
-      sessionStorage.setItem('app_is_authenticated', 'true');
-      showApp();
     }
 
     function login() {
-      const input = document.getElementById('password-input').value;
-      const masterPass = localStorage.getItem('system_master_password');
-      if (input === masterPass) {
-        sessionStorage.setItem('app_is_authenticated', 'true');
-        showApp();
+      const input = document.getElementById('login-pass').value;
+      const stored = localStorage.getItem('system_master_pass');
+      if (input === stored) {
+        sessionStorage.setItem('system_authenticated', 'true');
+        document.getElementById('login-overlay').style.display = 'none';
       } else {
-        document.getElementById('login-error').style.display = 'block';
+        document.getElementById('login-err').style.display = 'block';
       }
     }
 
     function logout() {
-      sessionStorage.removeItem('app_is_authenticated');
+      sessionStorage.removeItem('system_authenticated');
       location.reload();
     }
 
-    function showApp() {
-      document.getElementById('login-overlay').style.display = 'none';
-      document.getElementById('app-container').style.display = 'block';
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      event.target.classList.add('active');
     }
 
-    function openChangeModal() {
-      document.getElementById('setup-form-container').classList.add('hidden');
-      document.getElementById('login-form-container').classList.add('hidden');
-      document.getElementById('change-form-container').classList.remove('hidden');
-      document.getElementById('login-overlay').style.display = 'flex';
-    }
-
-    function closeChangeModal() {
-      document.getElementById('login-overlay').style.display = 'none';
-      document.getElementById('curr-pass-input').value = '';
-      document.getElementById('new-pass-input').value = '';
-      document.getElementById('change-error').style.display = 'none';
-    }
-
-    function updatePassword() {
-      const curr = document.getElementById('curr-pass-input').value;
-      const next = document.getElementById('new-pass-input').value;
-      const masterPass = localStorage.getItem('system_master_password');
-      if (curr !== masterPass || !next) {
-        document.getElementById('change-error').innerText = "Incorrect current password or empty new password.";
-        document.getElementById('change-error').style.display = 'block';
-        return;
-      }
-      localStorage.setItem('system_master_password', next);
-      alert("Password updated successfully!");
-      closeChangeModal();
-    }
-
-    // 1. STAFF ATTENDANCE & PAYROLL LOGIC
-    function addWorker(e) {
+    // 1. INFINITE HIERARCHICAL SKUs
+    function addCategoryItem(e) {
       e.preventDefault();
-      const name = document.getElementById('worker-name').value.trim();
-      const rate = parseFloat(document.getElementById('worker-rate').value);
-      if (!workers.find(w => w.name.toLowerCase() === name.toLowerCase())) {
-        workers.push({ id: Date.now().toString(), name, rate, daysWorked: 0, advancePaid: 0 });
-        localStorage.setItem('app_workers_v2', JSON.stringify(workers));
-        document.getElementById('worker-form').reset();
-        renderAll();
-      }
-    }
-
-    function recordAttendance(e) {
-      e.preventDefault();
-      const workerId = document.getElementById('att-worker-select').value;
-      const status = parseFloat(document.getElementById('att-status').value);
-      const advance = parseFloat(document.getElementById('att-advance').value) || 0;
-
-      const worker = workers.find(w => w.id === workerId);
-      if (worker) {
-        worker.daysWorked += status;
-        worker.advancePaid += advance;
-        localStorage.setItem('app_workers_v2', JSON.stringify(workers));
-        alert(`Recorded ${status} day(s) attendance and ₹${advance} advance for ${worker.name}.`);
-        document.getElementById('attendance-form').reset();
-        renderAll();
-      }
-    }
-
-    function resetWorkerAccount(id) {
-      const worker = workers.find(w => w.id === id);
-      if (worker && confirm(`Clear salary records for ${worker.name}?`)) {
-        worker.daysWorked = 0;
-        worker.advancePaid = 0;
-        localStorage.setItem('app_workers_v2', JSON.stringify(workers));
-        renderAll();
-      }
-    }
-
-    // 2. RAW MATERIAL & PRICE MATCH FEATURE
-    function addRawMaterial(e) {
-      e.preventDefault();
-      const name = document.getElementById('rm-name').value.trim();
-      const rate = parseFloat(document.getElementById('rm-rate').value);
-      const benchmark = parseFloat(document.getElementById('rm-benchmark').value);
-      const stock = parseFloat(document.getElementById('rm-stock').value);
-      const unit = document.getElementById('rm-unit').value;
-
-      const idx = rawMaterials.findIndex(r => r.name.toLowerCase() === name.toLowerCase());
-      if (idx > -1) {
-        rawMaterials[idx].stock += stock;
-        rawMaterials[idx].rate = rate;
-        rawMaterials[idx].benchmark = benchmark;
-      } else {
-        rawMaterials.push({ id: Date.now().toString(), name, rate, benchmark, stock, unit });
-      }
-
-      localStorage.setItem('app_raw_materials_v2', JSON.stringify(rawMaterials));
-      document.getElementById('rm-form').reset();
-      renderAll();
-    }
-
-    // 3. MULTI-LEVEL SUB-CATEGORY & STAGE MANAGER
-    function addCategory(e) {
-      e.preventDefault();
-      const parentId = document.getElementById('parent-cat-select').value;
-      const name = document.getElementById('cat-name').value.trim();
-      const stock = parseInt(document.getElementById('cat-stock').value) || 0;
-      const price = parseFloat(document.getElementById('cat-price').value) || 0;
+      const parentId = document.getElementById('sku-parent-select').value;
+      const name = document.getElementById('sku-name').value.trim();
+      const stock = parseInt(document.getElementById('sku-stock').value) || 0;
+      const price = parseFloat(document.getElementById('sku-price').value) || 0;
 
       const newItem = { id: Date.now().toString(), parentId, name, stock, price, children: [] };
 
       if (parentId === 'root') {
-        categoryTree.push(newItem);
+        skuTree.push(newItem);
       } else {
-        const parent = findCategoryById(categoryTree, parentId);
+        const parent = findNodeById(skuTree, parentId);
         if (parent) {
           if (!parent.children) parent.children = [];
           parent.children.push(newItem);
         }
       }
-
-      localStorage.setItem('app_category_tree', JSON.stringify(categoryTree));
-      document.getElementById('category-form').reset();
+      localStorage.setItem('erp_sku_tree', JSON.stringify(skuTree));
       renderAll();
     }
 
-    function findCategoryById(nodes, id) {
+    function findNodeById(nodes, id) {
       for (let node of nodes) {
         if (node.id === id) return node;
-        if (node.children && node.children.length > 0) {
-          const found = findCategoryById(node.children, id);
+        if (node.children) {
+          const found = findNodeById(node.children, id);
           if (found) return found;
         }
       }
       return null;
     }
 
-    // 4. MATERIAL ISSUE & ANTI-THEFT AUDIT
-    function issueMaterialToWorker(e) {
+    // 2. RAW MATERIAL & PRICE INFLATION SURGE RADAR
+    function addRawMaterial(e) {
       e.preventDefault();
-      const rmId = document.getElementById('issue-rm-select').value;
-      const qty = parseFloat(document.getElementById('issue-qty').value);
+      const name = document.getElementById('rm-name').value.trim();
+      const rate = parseFloat(document.getElementById('rm-rate').value);
+      const stock = parseFloat(document.getElementById('rm-stock').value);
+      const unit = document.getElementById('rm-unit').value;
 
-      const rm = rawMaterials.find(r => r.id === rmId);
-      if (rm) {
-        if (rm.stock < qty) {
-          alert("Insufficient raw material stock!");
-          return;
+      const existing = rawMaterials.find(r => r.name.toLowerCase() === name.toLowerCase());
+      if (existing) {
+        if (existing.rate !== rate) {
+          const diff = rate - existing.rate;
+          priceRadar.unshift({
+            material: name,
+            oldRate: existing.rate,
+            newRate: rate,
+            diff: diff,
+            status: diff > 0 ? 'PRICE SURGE 📈' : 'PRICE DROP 📉'
+          });
+          localStorage.setItem('erp_price_radar', JSON.stringify(priceRadar));
         }
-        rm.stock -= qty;
-        localStorage.setItem('app_raw_materials_v2', JSON.stringify(rawMaterials));
-        alert(`Issued ${qty} ${rm.unit} of ${rm.name}.`);
-        document.getElementById('issue-form').reset();
-        renderAll();
-      }
-    }
-
-    function auditMaterialStock(e) {
-      e.preventDefault();
-      const rmId = document.getElementById('audit-rm-select').value;
-      const actualQty = parseFloat(document.getElementById('audit-actual-qty').value);
-
-      const rm = rawMaterials.find(r => r.id === rmId);
-      if (rm) {
-        const diff = actualQty - rm.stock;
-        const status = diff < 0 ? 'DEFICIT / SUSPECTED THEFT' : (diff > 0 ? 'SURPLUS' : 'BALANCED');
-        
-        auditLogs.unshift({
-          date: new Date().toLocaleDateString('en-IN'),
-          name: rm.name,
-          expected: rm.stock.toFixed(2) + " " + rm.unit,
-          actual: actualQty.toFixed(2) + " " + rm.unit,
-          diff: diff.toFixed(2) + " " + rm.unit,
-          status
-        });
-
-        rm.stock = actualQty; // Sync to actual measured count
-        localStorage.setItem('app_raw_materials_v2', JSON.stringify(rawMaterials));
-        localStorage.setItem('app_audit_logs', JSON.stringify(auditLogs));
-        document.getElementById('audit-form').reset();
-        renderAll();
-      }
-    }
-
-    // RENDER ALL DATA
-    function renderAll() {
-      // 1. Payroll Table
-      const payrollBody = document.getElementById('payroll-table-body');
-      payrollBody.innerHTML = '';
-      if (workers.length === 0) {
-        payrollBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No workers registered.</td></tr>';
+        existing.stock += stock;
+        existing.rate = rate;
       } else {
-        workers.forEach(w => {
-          const earned = w.daysWorked * w.rate;
-          const net = earned - w.advancePaid;
-          payrollBody.innerHTML += `
-            <tr>
-              <td>${w.name}</td>
-              <td>₹ ${w.rate.toFixed(2)}</td>
-              <td>${w.daysWorked}</td>
-              <td>₹ ${earned.toFixed(2)}</td>
-              <td>₹ ${w.advancePaid.toFixed(2)}</td>
-              <td style="font-weight:bold; color:${net >= 0 ? 'green' : 'red'};">₹ ${net.toFixed(2)}</td>
-              <td><button class="btn btn-warning" style="padding:2px 6px; font-size:12px;" onclick="resetWorkerAccount('${w.id}')">Settle / Reset</button></td>
-            </tr>`;
-        });
+        rawMaterials.push({ id: Date.now().toString(), name, rate, stock, unit });
       }
-
-      // 2. Category Tree & Flattened Options
-      const treeContainer = document.getElementById('category-tree-display');
-      treeContainer.innerHTML = '';
-      if (categoryTree.length === 0) {
-        treeContainer.innerHTML = '<p style="color:#777;">No product categories or sub-units added yet.</p>';
-      } else {
-        treeContainer.appendChild(buildTreeHTML(categoryTree));
-      }
-
-      // 3. Audit Logs
-      const auditBody = document.getElementById('audit-log-body');
-      auditBody.innerHTML = '';
-      if (auditLogs.length === 0) {
-        auditBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No audit logs performed yet.</td></tr>';
-      } else {
-        auditLogs.forEach(l => {
-          const badge = l.status.includes('THEFT') ? 'badge-alert' : 'badge-ok';
-          auditBody.innerHTML += `
-            <tr>
-              <td>${l.date}</td>
-              <td>${l.name}</td>
-              <td>${l.expected}</td>
-              <td>${l.actual}</td>
-              <td style="font-weight:bold;">${l.diff}</td>
-              <td><span class="${badge}">${l.status}</span></td>
-            </tr>`;
-        });
-      }
-
-      // 4. Price Match Table
-      const pmBody = document.getElementById('price-match-body');
-      pmBody.innerHTML = '';
-      if (rawMaterials.length === 0) {
-        pmBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No raw material pricing recorded.</td></tr>';
-      } else {
-        rawMaterials.forEach(r => {
-          const diff = r.rate - r.benchmark;
-          const badge = diff > 0 ? 'badge-alert' : 'badge-ok';
-          const label = diff > 0 ? 'OVER BENCHMARK' : (diff < 0 ? 'SAVING / BELOW TARGET' : 'MATCHED');
-          pmBody.innerHTML += `
-            <tr>
-              <td>${r.name} (${r.stock.toFixed(2)} ${r.unit})</td>
-              <td>₹ ${r.rate.toFixed(2)}</td>
-              <td>₹ ${r.benchmark.toFixed(2)}</td>
-              <td>₹ ${diff.toFixed(2)}</td>
-              <td><span class="${badge}">${label}</span></td>
-            </tr>`;
-        });
-      }
-
-      // 5. Invoices Tracker
-      const invBody = document.getElementById('invoice-tracker-body');
-      invBody.innerHTML = '';
-      if (savedInvoices.length === 0) {
-        invBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No invoices saved yet.</td></tr>';
-      } else {
-        const today = new Date().toISOString().split('T')[0];
-        savedInvoices.forEach(inv => {
-          const isOverdue = !inv.paid && inv.dueDate < today;
-          const statusBadge = inv.paid ? '<span class="badge-ok">PAID</span>' : (isOverdue ? '<span class="badge-alert">OVERDUE</span>' : '<span class="badge-pending">PENDING</span>');
-          invBody.innerHTML += `
-            <tr>
-              <td>${inv.no}</td>
-              <td>${inv.customer}</td>
-              <td>${inv.date}</td>
-              <td>${inv.dueDate}</td>
-              <td>₹ ${inv.amount.toFixed(2)}</td>
-              <td>${statusBadge}</td>
-              <td>
-                ${!inv.paid ? `<button class="btn" style="padding:2px 6px; font-size:12px;" onclick="markInvoicePaid('${inv.no}')">Mark Paid</button>` : 'Complete'}
-              </td>
-            </tr>`;
-        });
-      }
-
-      updateDropdowns();
-    }
-
-    function buildTreeHTML(nodes) {
-      const ul = document.createElement('div');
-      nodes.forEach(node => {
-        const div = document.createElement('div');
-        div.className = 'tree-node';
-        div.innerHTML = `<strong>• ${node.name}</strong> — Stock: <code>${node.stock} pcs</code> | Price: <code>₹${node.price.toFixed(2)}</code>`;
-        if (node.children && node.children.length > 0) {
-          div.appendChild(buildTreeHTML(node.children));
-        }
-        ul.appendChild(div);
-      });
-      return ul;
-    }
-
-    function updateDropdowns() {
-      // Workers
-      const attWorker = document.getElementById('att-worker-select');
-      const issueWorker = document.getElementById('issue-worker-select');
-      attWorker.innerHTML = '<option value="">-- Select Worker --</option>';
-      issueWorker.innerHTML = '<option value="">-- Select Worker --</option>';
-      workers.forEach(w => {
-        attWorker.innerHTML += `<option value="${w.id}">${w.name}</option>`;
-        issueWorker.innerHTML += `<option value="${w.id}">${w.name}</option>`;
-      });
-
-      // Raw Materials
-      const issueRm = document.getElementById('issue-rm-select');
-      const auditRm = document.getElementById('audit-rm-select');
-      issueRm.innerHTML = '<option value="">-- Select Raw Material --</option>';
-      auditRm.innerHTML = '<option value="">-- Select Raw Material --</option>';
-      rawMaterials.forEach(r => {
-        issueRm.innerHTML += `<option value="${r.id}">${r.name} (${r.stock.toFixed(2)} ${r.unit})</option>`;
-        auditRm.innerHTML += `<option value="${r.id}">${r.name}</option>`;
-      });
-
-      // Parent Categories & Invoice Goods Dropdowns
-      const parentSelect = document.getElementById('parent-cat-select');
-      const invoiceSelect = document.getElementById('invoice-item-select');
-      parentSelect.innerHTML = '<option value="root">-- Root (Main Item e.g., Apple / Box) --</option>';
-      invoiceSelect.innerHTML = '<option value="">-- Select Goods Variant --</option>';
-      
-      const flatCategories = [];
-      flattenCategories(categoryTree, flatCategories, '');
-      flatCategories.forEach(c => {
-        parentSelect.innerHTML += `<option value="${c.id}">${c.path}</option>`;
-        invoiceSelect.innerHTML += `<option value="${c.id}">${c.path} (Stock: ${c.stock} pcs - ₹${c.price})</option>`;
-      });
-    }
-
-    function flattenCategories(nodes, list, prefix) {
-      nodes.forEach(node => {
-        const currentPath = prefix ? `${prefix} ➔ ${node.name}` : node.name;
-        list.push({ id: node.id, path: currentPath, stock: node.stock, price: node.price, node });
-        if (node.children && node.children.length > 0) {
-          flattenCategories(node.children, list, currentPath);
-        }
-      });
-    }
-
-    // INVOICE & BILLING LOGIC
-    function addToInvoice(e) {
-      e.preventDefault();
-      const catId = document.getElementById('invoice-item-select').value;
-      const qty = parseInt(document.getElementById('invoice-qty').value);
-
-      const item = findCategoryById(categoryTree, catId);
-      if (!item) return;
-
-      if (item.stock < qty) {
-        alert("Insufficient stock in this product stage/sub-category!");
-        return;
-      }
-
-      item.stock -= qty;
-      localStorage.setItem('app_category_tree', JSON.stringify(categoryTree));
-
-      invoiceCart.push({
-        id: item.id,
-        name: item.name,
-        qty: qty,
-        price: item.price,
-        amount: item.price * qty
-      });
-
-      renderCart();
+      localStorage.setItem('erp_raw_materials', JSON.stringify(rawMaterials));
       renderAll();
     }
 
-    function renderCart() {
-      const cartBody = document.getElementById('cart-table-body');
-      cartBody.innerHTML = '';
-      if (invoiceCart.length === 0) {
-        cartBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No items added to invoice draft.</td></tr>';
+    // 3. PENDING & RECEIVED ORDERS MODULE
+    function createOrder(e) {
+      e.preventDefault();
+      const cust = document.getElementById('ord-cust').value.trim();
+      const skuId = document.getElementById('ord-sku-select').value;
+      const qty = parseInt(document.getElementById('ord-qty').value);
+      const price = parseFloat(document.getElementById('ord-price').value);
+      const dueDate = document.getElementById('ord-due-date').value;
+
+      const sku = findNodeById(skuTree, skuId);
+      if (!sku) return;
+
+      orders.unshift({
+        id: 'ORD-' + Math.floor(1000 + Math.random() * 9000),
+        customer: cust,
+        skuId,
+        skuName: sku.name,
+        qty,
+        price,
+        total: qty * price,
+        dueDate,
+        status: 'PENDING'
+      });
+
+      localStorage.setItem('erp_orders', JSON.stringify(orders));
+      alert("Order booked as PENDING!");
+      renderAll();
+    }
+
+    function fulfillOrder(orderId) {
+      const ord = orders.find(o => o.id === orderId);
+      if (!ord) return;
+
+      const sku = findNodeById(skuTree, ord.skuId);
+      if (!sku || sku.stock < ord.qty) {
+        alert("Cannot fulfill order: Insufficient stock available!");
         return;
       }
-      invoiceCart.forEach((item, idx) => {
-        cartBody.innerHTML += `
-          <tr>
-            <td>${idx + 1}</td>
-            <td>${item.name}</td>
-            <td>${item.qty} pcs</td>
-            <td>₹ ${item.price.toFixed(2)}</td>
-            <td>₹ ${item.amount.toFixed(2)}</td>
-          </tr>`;
+
+      sku.stock -= ord.qty;
+      ord.status = 'FULFILLED';
+
+      // Auto add to Accounting Ledger as Receivable Debtor
+      ledger.push({
+        id: Date.now().toString(),
+        entity: ord.customer,
+        category: 'debtor',
+        flow: 'debit',
+        amount: ord.total
+      });
+
+      localStorage.setItem('erp_orders', JSON.stringify(orders));
+      localStorage.setItem('erp_sku_tree', JSON.stringify(skuTree));
+      localStorage.setItem('erp_ledger', JSON.stringify(ledger));
+      alert("Order fulfilled, stock deducted, and debtor ledger updated!");
+      renderAll();
+    }
+
+    // 4. STAFF & PAYROLL
+    function addWorker(e) {
+      e.preventDefault();
+      const name = document.getElementById('worker-name').value.trim();
+      const wage = parseFloat(document.getElementById('worker-wage').value);
+      workers.push({ id: Date.now().toString(), name, wage, daysWorked: 0, advances: 0, currentTask: 'Idle' });
+      localStorage.setItem('erp_workers', JSON.stringify(workers));
+      renderAll();
+    }
+
+    function recordAttendance(e) {
+      e.preventDefault();
+      const id = document.getElementById('att-worker-select').value;
+      const status = parseFloat(document.getElementById('att-status').value);
+      const advance = parseFloat(document.getElementById('att-advance').value) || 0;
+      const task = document.getElementById('att-task').value || 'Unassigned';
+
+      const w = workers.find(x => x.id === id);
+      if (w) {
+        w.daysWorked += status;
+        w.advances += advance;
+        w.currentTask = task;
+        localStorage.setItem('erp_workers', JSON.stringify(workers));
+        renderAll();
+      }
+    }
+
+    // 5. PRODUCTION & CONSUMPTION VARIANCE
+    function addIssueMaterialRow() {
+      const container = document.getElementById('issue-material-container');
+      const row = document.createElement('div');
+      row.className = 'dynamic-row';
+      row.innerHTML = `<select class="issue-rm-dropdown" required></select><input type="number" class="issue-rm-qty" placeholder="Qty" step="0.01" required>`;
+      container.appendChild(row);
+      updateDropdowns();
+    }
+
+    function addRecMaterialRow() {
+      const container = document.getElementById('rec-material-container');
+      const row = document.createElement('div');
+      row.className = 'dynamic-row';
+      row.innerHTML = `<select class="rec-rm-dropdown" required></select><input type="number" class="rec-rm-qty" placeholder="Total Consumed" step="0.01" required>`;
+      container.appendChild(row);
+      updateDropdowns();
+    }
+
+    function issueMaterialsToWorker(e) {
+      e.preventDefault();
+      const dropdowns = document.querySelectorAll('.issue-rm-dropdown');
+      const qtys = document.querySelectorAll('.issue-rm-qty');
+
+      dropdowns.forEach((dd, idx) => {
+        const rmId = dd.value;
+        const q = parseFloat(qtys[idx].value);
+        const rm = rawMaterials.find(r => r.id === rmId);
+        if (rm && rm.stock >= q) {
+          rm.stock -= q;
+        }
+      });
+      localStorage.setItem('erp_raw_materials', JSON.stringify(rawMaterials));
+      alert("Materials successfully issued!");
+      renderAll();
+    }
+
+    function receiveFinishedGoods(e) {
+      e.preventDefault();
+      const workerId = document.getElementById('rec-worker-select').value;
+      const skuId = document.getElementById('rec-sku-select').value;
+      const prodQty = parseInt(document.getElementById('rec-qty').value);
+
+      const worker = workers.find(w => w.id === workerId);
+      const sku = findNodeById(skuTree, skuId);
+      if (!sku || !worker) return;
+
+      sku.stock += prodQty;
+
+      const rmDropdowns = document.querySelectorAll('.rec-rm-dropdown');
+      const rmQtys = document.querySelectorAll('.rec-rm-qty');
+
+      rmDropdowns.forEach((dd, idx) => {
+        const rmId = dd.value;
+        const totalUsed = parseFloat(rmQtys[idx].value);
+        const rm = rawMaterials.find(r => r.id === rmId);
+        if (!rm) return;
+
+        const currentPerUnit = totalUsed / prodQty;
+        const prevRun = usageAudit.find(a => a.workerId === workerId && a.skuId === skuId && a.rmId === rmId);
+        let status = 'NORMAL';
+        if (prevRun && currentPerUnit > prevRun.perUnit) {
+          status = 'OVER-USAGE / SUSPECTED WASTAGE ⚠️';
+        }
+
+        usageAudit.unshift({
+          date: new Date().toLocaleDateString('en-IN'),
+          workerId, workerName: worker.name,
+          skuId, skuName: sku.name,
+          rmId, rmName: rm.name,
+          prevUnit: prevRun ? prevRun.perUnit.toFixed(2) : 'N/A',
+          currUnit: currentPerUnit.toFixed(2),
+          status
+        });
+      });
+
+      localStorage.setItem('erp_sku_tree', JSON.stringify(skuTree));
+      localStorage.setItem('erp_usage_audit', JSON.stringify(usageAudit));
+      alert("Finished goods received!");
+      renderAll();
+    }
+
+    // 6. ACCOUNTING LEDGER
+    function addLedgerEntry(e) {
+      e.preventDefault();
+      const entity = document.getElementById('acc-entity').value.trim();
+      const category = document.getElementById('acc-type').value;
+      const flow = document.getElementById('acc-flow').value;
+      const amount = parseFloat(document.getElementById('acc-amount').value);
+
+      ledger.push({ id: Date.now().toString(), entity, category, flow, amount });
+      localStorage.setItem('erp_ledger', JSON.stringify(ledger));
+      renderAll();
+    }
+
+    // 7. INVOICING
+    function addToInvoice(e) {
+      e.preventDefault();
+      const skuId = document.getElementById('inv-sku-select').value;
+      const qty = parseInt(document.getElementById('inv-qty').value);
+      const sku = findNodeById(skuTree, skuId);
+      if (sku && sku.stock >= qty) {
+        sku.stock -= qty;
+        activeCart.push({ name: sku.name, qty, price: sku.price, amount: sku.price * qty });
+        renderCart();
+      } else {
+        alert("Insufficient stock!");
+      }
+    }
+
+    function renderCart() {
+      const b = document.getElementById('cart-body');
+      b.innerHTML = '';
+      activeCart.forEach(i => {
+        b.innerHTML += `<tr><td>${i.name}</td><td>${i.qty}</td><td>₹${i.price}</td><td>₹${i.amount}</td></tr>`;
       });
     }
 
-    function generateTallyInvoice() {
-      if (invoiceCart.length === 0) {
-        alert("Please add items to invoice first.");
-        return;
-      }
+    function generateInvoice() {
+      const cust = document.getElementById('inv-cust').value;
+      const dueDate = document.getElementById('inv-due-date').value;
+      if (!cust || activeCart.length === 0) return;
 
-      const buyerName = document.getElementById('cust-name').value.trim() || 'Cash Customer';
-      const dueDate = document.getElementById('cust-due-date').value || new Date().toISOString().split('T')[0];
-      const invNo = 'INV-' + Math.floor(1000 + Math.random() * 9000);
-      
-      const tallyBody = document.getElementById('tally-items-body');
-      tallyBody.innerHTML = '';
-      let grandTotal = 0;
-
-      invoiceCart.forEach((item, idx) => {
-        grandTotal += item.amount;
-        tallyBody.innerHTML += `
-          <tr>
-            <td style="text-align:center;">${idx + 1}</td>
-            <td>${item.name}</td>
-            <td style="text-align:right;">${item.qty} pcs</td>
-            <td style="text-align:right;">${item.price.toFixed(2)}</td>
-            <td style="text-align:center;">pcs</td>
-            <td style="text-align:right;">${item.amount.toFixed(2)}</td>
-          </tr>`;
-      });
-
-      savedInvoices.unshift({
-        no: invNo,
-        customer: buyerName,
-        date: new Date().toLocaleDateString('en-IN'),
-        dueDate: dueDate,
-        amount: grandTotal,
+      const total = activeCart.reduce((sum, i) => sum + i.amount, 0);
+      invoices.unshift({
+        no: 'INV-' + Math.floor(1000 + Math.random() * 9000),
+        customer: cust,
+        dueDate,
+        amount: total,
         paid: false
       });
-      localStorage.setItem('app_saved_invoices', JSON.stringify(savedInvoices));
 
-      document.getElementById('tally-buyer-name').innerText = buyerName;
-      document.getElementById('tally-inv-no').innerText = invNo;
-      document.getElementById('tally-inv-date').innerText = new Date().toLocaleDateString('en-IN');
-      document.getElementById('tally-due-date').innerText = dueDate;
-      document.getElementById('tally-grand-total').innerText = grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
-      document.getElementById('tally-words-amount').innerText = numberToWords(Math.round(grandTotal)) + " Rupees Only";
-
-      document.getElementById('invoice-modal').style.display = 'block';
-      invoiceCart = [];
+      localStorage.setItem('erp_invoices', JSON.stringify(invoices));
+      localStorage.setItem('erp_sku_tree', JSON.stringify(skuTree));
+      activeCart = [];
       renderCart();
       renderAll();
     }
 
     function markInvoicePaid(no) {
-      const inv = savedInvoices.find(i => i.no === no);
+      const inv = invoices.find(i => i.no === no);
       if (inv) {
         inv.paid = true;
-        localStorage.setItem('app_saved_invoices', JSON.stringify(savedInvoices));
+        localStorage.setItem('erp_invoices', JSON.stringify(invoices));
         renderAll();
       }
     }
 
-    function closeInvoiceModal() {
-      document.getElementById('invoice-modal').style.display = 'none';
+    // RENDER ALL SCREENS
+    function renderAll() {
+      // SKU Tree
+      const treeDiv = document.getElementById('sku-tree-display');
+      treeDiv.innerHTML = '';
+      if (skuTree.length === 0) treeDiv.innerHTML = '<p style="color:#777;">No SKUs configured.</p>';
+      else treeDiv.appendChild(buildTreeHTML(skuTree));
+
+      // Price Radar
+      const prBody = document.getElementById('price-radar-body');
+      prBody.innerHTML = '';
+      priceRadar.forEach(p => {
+        prBody.innerHTML += `<tr>
+          <td class="col-rm">${p.material}</td>
+          <td class="col-oldrate">₹${p.oldRate}</td>
+          <td class="col-newrate">₹${p.newRate}</td>
+          <td class="col-diff">₹${p.diff}</td>
+          <td class="col-status"><span class="badge ${p.diff > 0 ? 'badge-danger' : 'badge-success'}">${p.status}</span></td>
+        </tr>`;
+      });
+
+      // Orders
+      const ordBody = document.getElementById('orders-list-body');
+      ordBody.innerHTML = '';
+      orders.forEach(o => {
+        ordBody.innerHTML += `<tr>
+          <td><strong>${o.id}</strong></td>
+          <td>${o.customer}</td>
+          <td>${o.skuName}</td>
+          <td>${o.qty} pcs</td>
+          <td>₹${o.total.toFixed(2)}</td>
+          <td>${o.dueDate}</td>
+          <td><span class="badge ${o.status === 'PENDING' ? 'badge-warning' : 'badge-success'}">${o.status}</span></td>
+          <td>${o.status === 'PENDING' ? `<button class="btn btn-sm" onclick="fulfillOrder('${o.id}')">Fulfill & Dispatch</button>` : 'Completed'}</td>
+        </tr>`;
+      });
+
+      // Payroll
+      const prlBody = document.getElementById('payroll-body');
+      prlBody.innerHTML = '';
+      workers.forEach(w => {
+        const earned = w.daysWorked * w.wage;
+        const net = earned - w.advances;
+        prlBody.innerHTML += `<tr>
+          <td class="col-wname">${w.name}</td>
+          <td class="col-wwage">₹${w.wage}</td>
+          <td class="col-wdays">${w.daysWorked}</td>
+          <td class="col-wtask"><span class="badge badge-warning">${w.currentTask}</span></td>
+          <td class="col-wearned">₹${earned}</td>
+          <td class="col-wadv">₹${w.advances}</td>
+          <td class="col-wnet" style="font-weight:bold; color:${net >= 0 ? 'green' : 'red'};">₹${net}</td>
+        </tr>`;
+      });
+
+      // Consumption Variance
+      const cvBody = document.getElementById('consumption-variance-body');
+      cvBody.innerHTML = '';
+      usageAudit.forEach(a => {
+        cvBody.innerHTML += `<tr>
+          <td class="col-cdate">${a.date}</td>
+          <td class="col-cworker">${a.workerName}</td>
+          <td class="col-cprod">${a.skuName}</td>
+          <td class="col-crm">${a.rmName}</td>
+          <td class="col-cprev">${a.prevUnit}</td>
+          <td class="col-ccurr">${a.currUnit}</td>
+          <td class="col-cstatus"><span class="badge ${a.status.includes('OVER') ? 'badge-danger' : 'badge-success'}">${a.status}</span></td>
+        </tr>`;
+      });
+
+      // Ledger
+      const lbBody = document.getElementById('ledger-balances-body');
+      lbBody.innerHTML = '';
+      const entityBalances = {};
+      ledger.forEach(l => {
+        if (!entityBalances[l.entity]) entityBalances[l.entity] = { cat: l.category, bal: 0 };
+        entityBalances[l.entity].bal += (l.flow === 'debit' ? l.amount : -l.amount);
+      });
+      Object.keys(entityBalances).forEach(e => {
+        lbBody.innerHTML += `<tr>
+          <td class="col-lentity">${e}</td>
+          <td class="col-lcat">${entityBalances[e].cat.toUpperCase()}</td>
+          <td class="col-lbal" style="font-weight:bold;">₹${entityBalances[e].bal.toFixed(2)}</td>
+        </tr>`;
+      });
+
+      // Invoices
+      const invBody = document.getElementById('invoice-tracker-body');
+      invBody.innerHTML = '';
+      const today = new Date().toISOString().split('T')[0];
+      invoices.forEach(i => {
+        const isOverdue = !i.paid && i.dueDate < today;
+        invBody.innerHTML += `<tr>
+          <td class="col-inno">${i.no}</td>
+          <td class="col-incust">${i.customer}</td>
+          <td class="col-indue">${i.dueDate}</td>
+          <td class="col-inamt">₹${i.amount}</td>
+          <td class="col-instat"><span class="badge ${i.paid ? 'badge-success' : (isOverdue ? 'badge-danger' : 'badge-warning')}">${i.paid ? 'PAID' : (isOverdue ? 'OVERDUE' : 'PENDING')}</span></td>
+          <td class="col-inact">${!i.paid ? `<button class="btn btn-sm" onclick="markInvoicePaid('${i.no}')">Mark Paid</button>` : 'Completed'}</td>
+        </tr>`;
+      });
+
+      calculateStats(entityBalances);
+      updateDropdowns();
+      applyColumnVisibility();
     }
 
-    function numberToWords(num) {
-      const a = ['','One ','Two ','Three ','Four ','Five ','Six ','Seven ','Eight ','Nine ','Ten ','Eleven ','Twelve ','Thirteen ','Fourteen ','Fifteen ','Sixteen ','Seventeen ','Eighteen ','Nineteen '];
-      const b = ['', '', 'Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
-      if ((num = num.toString()).length > 9) return 'Overflow';
-      let n = ('000000000' + num).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
-      if (!n) return ''; 
-      let str = '';
-      str += (n[1] != 0) ? (a[Number(n[1])] || b[n[1][0]] + ' ' + a[n[1][1]]) + 'Crore ' : '';
-      str += (n[2] != 0) ? (a[Number(n[2])] || b[n[2][0]] + ' ' + a[n[2][1]]) + 'Lakh ' : '';
-      str += (n[3] != 0) ? (a[Number(n[3])] || b[n[3][0]] + ' ' + a[n[3][1]]) + 'Thousand ' : '';
-      str += (n[4] != 0) ? (a[Number(n[4])] || b[n[4][0]] + ' ' + a[n[4][1]]) + 'Hundred ' : '';
-      str += (n[5] != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n[5])] || b[n[5][0]] + ' ' + a[n[5][1]]) : '';
-      return str.trim() || 'Zero';
+    function calculateStats(balances) {
+      let invVal = 0;
+      function sumVal(nodes) {
+        nodes.forEach(n => { invVal += n.stock * n.price; if (n.children) sumVal(n.children); });
+      }
+      sumVal(skuTree);
+      rawMaterials.forEach(r => invVal += r.stock * r.rate);
+      document.getElementById('stat-inv-val').innerText = '₹ ' + invVal.toFixed(2);
+
+      const pendingOrdersVal = orders.filter(o => o.status === 'PENDING').reduce((s, o) => s + o.total, 0);
+      document.getElementById('stat-pending-orders').innerText = '₹ ' + pendingOrdersVal.toFixed(2);
+
+      let debtors = 0, creditors = 0;
+      Object.keys(balances).forEach(k => {
+        if (balances[k].cat === 'debtor') debtors += balances[k].bal;
+        if (balances[k].cat === 'creditor') creditors += balances[k].bal;
+      });
+      document.getElementById('stat-debtors').innerText = '₹ ' + debtors.toFixed(2);
+      document.getElementById('stat-creditors').innerText = '₹ ' + creditors.toFixed(2);
+    }
+
+    function buildTreeHTML(nodes) {
+      const container = document.createElement('div');
+      nodes.forEach(n => {
+        const item = document.createElement('div');
+        item.className = 'tree-item';
+        item.innerHTML = `<span><strong>• ${n.name}</strong> (Stock: ${n.stock} pcs | Price: ₹${n.price})</span>`;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'tree-node';
+        wrapper.appendChild(item);
+        if (n.children && n.children.length > 0) {
+          wrapper.appendChild(buildTreeHTML(n.children));
+        }
+        container.appendChild(wrapper);
+      });
+      return container;
+    }
+
+    function updateDropdowns() {
+      const pSel = document.getElementById('sku-parent-select');
+      const invSel = document.getElementById('inv-sku-select');
+      const recSel = document.getElementById('rec-sku-select');
+      const ordSel = document.getElementById('ord-sku-select');
+      
+      pSel.innerHTML = '<option value="root">-- Root SKU --</option>';
+      invSel.innerHTML = recSel.innerHTML = ordSel.innerHTML = '<option value="">-- Select SKU --</option>';
+
+      const flat = [];
+      function flatten(nodes, path) {
+        nodes.forEach(n => {
+          const cur = path ? `${path} ➔ ${n.name}` : n.name;
+          flat.push({ id: n.id, path: cur });
+          if (n.children) flatten(n.children, cur);
+        });
+      }
+      flatten(skuTree, '');
+
+      flat.forEach(f => {
+        const opt = `<option value="${f.id}">${f.path}</option>`;
+        pSel.innerHTML += opt; invSel.innerHTML += opt; recSel.innerHTML += opt; ordSel.innerHTML += opt;
+      });
+
+      const attW = document.getElementById('att-worker-select');
+      const issW = document.getElementById('issue-worker-select');
+      const recW = document.getElementById('rec-worker-select');
+      attW.innerHTML = issW.innerHTML = recW.innerHTML = '<option value="">-- Select Worker --</option>';
+      workers.forEach(w => {
+        const opt = `<option value="${w.id}">${w.name}</option>`;
+        attW.innerHTML += opt; issW.innerHTML += opt; recW.innerHTML += opt;
+      });
+
+      document.querySelectorAll('.issue-rm-dropdown, .rec-rm-dropdown').forEach(dd => {
+        dd.innerHTML = '<option value="">-- Raw Material --</option>';
+        rawMaterials.forEach(r => dd.innerHTML += `<option value="${r.id}">${r.name} (Stock: ${r.stock} ${r.unit})</option>`);
+      });
+    }
+
+    function openColumnCustomizer() {
+      const container = document.getElementById('column-checkboxes-container');
+      container.innerHTML = '';
+      const allCols = [
+        { key: 'col-rm', label: 'Material Name' }, { key: 'col-oldrate', label: 'Previous Rate' }, { key: 'col-newrate', label: 'New Rate' },
+        { key: 'col-diff', label: 'Price Diff' }, { key: 'col-wname', label: 'Worker Name' }, { key: 'col-wtask', label: 'Current Activity' },
+        { key: 'col-wearned', label: 'Earned Salary' }, { key: 'col-wnet', label: 'Net Pending Wage' }, { key: 'col-cworker', label: 'Audit Worker' },
+        { key: 'col-cstatus', label: 'Variance Status' }, { key: 'col-lentity', label: 'Ledger Entity' }, { key: 'col-inamt', label: 'Invoice Amount' }
+      ];
+
+      allCols.forEach(c => {
+        const isChecked = columnVisibility[c.key] !== false;
+        container.innerHTML += `<div style="margin-bottom:8px;"><label><input type="checkbox" id="chk-${c.key}" ${isChecked ? 'checked' : ''}> Show ${c.label}</label></div>`;
+      });
+      document.getElementById('customizer-modal').style.display = 'block';
+    }
+
+    function closeColumnCustomizer() {
+      const allCols = ['col-rm', 'col-oldrate', 'col-newrate', 'col-diff', 'col-wname', 'col-wtask', 'col-wearned', 'col-wnet', 'col-cworker', 'col-cstatus', 'col-lentity', 'col-inamt'];
+      allCols.forEach(k => {
+        const chk = document.getElementById(`chk-${k}`);
+        if (chk) columnVisibility[k] = chk.checked;
+      });
+      localStorage.setItem('erp_column_visibility', JSON.stringify(columnVisibility));
+      document.getElementById('customizer-modal').style.display = 'none';
+      applyColumnVisibility();
+    }
+
+    function applyColumnVisibility() {
+      Object.keys(columnVisibility).forEach(k => {
+        const show = columnVisibility[k];
+        document.querySelectorAll(`.${k}`).forEach(el => {
+          el.style.display = show ? '' : 'none';
+        });
+      });
     }
   </script>
 </body>
