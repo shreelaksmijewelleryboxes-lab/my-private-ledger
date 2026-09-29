@@ -8,18 +8,25 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     body { background-color: #f4f6f9; color: #333; padding: 15px; }
     
-    /* Login Overlay */
+    /* Login & Setup Overlay */
     #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 9999; }
-    .login-card { background: #fff; padding: 25px; border-radius: 8px; width: 90%; max-width: 360px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-    .login-card h2 { margin-bottom: 15px; font-size: 20px; }
-    .login-card input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
-    .login-card button { width: 100%; padding: 12px; background: #007bff; color: #fff; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; }
+    .login-card { background: #fff; padding: 25px; border-radius: 8px; width: 90%; max-width: 380px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+    .login-card h2 { margin-bottom: 10px; font-size: 20px; }
+    .login-card p { font-size: 13px; color: #666; margin-bottom: 15px; }
+    .login-card input { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 15px; }
+    .login-card button { width: 100%; padding: 12px; background: #007bff; color: #fff; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; font-weight: 600; }
+    .login-card button:hover { opacity: 0.9; }
     
+    .hidden { display: none !important; }
+
     /* Main Layout */
     .container { max-width: 1200px; margin: 0 auto; display: none; }
     header { background: #1a252f; color: #fff; padding: 15px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
     header h1 { font-size: 20px; }
-    header button { background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
+    header .header-btns { display: flex; gap: 10px; }
+    header button { border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; }
+    .btn-lock { background: #dc3545; color: white; }
+    .btn-change-pass { background: #17a2b8; color: white; }
     
     .grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
     @media(min-width: 900px) { .grid { grid-template-columns: 1fr 1fr; } }
@@ -31,7 +38,7 @@
     .form-group { margin-bottom: 12px; }
     .form-group label { display: block; margin-bottom: 5px; font-size: 14px; font-weight: 600; }
     .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
-    .btn { background: #28a745; color: #fff; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-size: 15px; width: 100%; }
+    .btn { background: #28a745; color: #fff; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-size: 15px; width: 100%; font-weight: 600; }
     .btn-secondary { background: #17a2b8; margin-top: 10px; }
     .btn-warning { background: #ffc107; color: #000; }
     
@@ -69,13 +76,40 @@
 </head>
 <body>
 
-  <!-- PASSWORD MODAL -->
+  <!-- DYNAMIC AUTH / PASSWORD OVERLAY -->
   <div id="login-overlay">
     <div class="login-card">
-      <h2>Enter Password</h2>
-      <input type="password" id="password-input" placeholder="Password">
-      <button onclick="login()">Log In</button>
-      <p id="login-error" style="color:red; margin-top:10px; display:none; font-size:13px;">Incorrect Password</p>
+      
+      <!-- FIRST TIME SETUP FORM -->
+      <div id="setup-form-container" class="hidden">
+        <h2>Welcome! First-Time Setup</h2>
+        <p>Set a master password for your system.</p>
+        <input type="password" id="setup-pass-input" placeholder="Create New Password">
+        <input type="password" id="setup-confirm-input" placeholder="Confirm New Password">
+        <button onclick="saveInitialPassword()">Set Master Password</button>
+        <p id="setup-error" style="color:red; margin-top:10px; display:none; font-size:13px;"></p>
+      </div>
+
+      <!-- REGULAR LOGIN FORM -->
+      <div id="login-form-container" class="hidden">
+        <h2>Enter Password</h2>
+        <p>Enter your password to unlock the tool.</p>
+        <input type="password" id="password-input" placeholder="Password" onkeydown="if(event.key==='Enter') login()">
+        <button onclick="login()">Log In</button>
+        <p id="login-error" style="color:red; margin-top:10px; display:none; font-size:13px;">Incorrect Password</p>
+      </div>
+
+      <!-- CHANGE PASSWORD FORM (INSIDE APP) -->
+      <div id="change-form-container" class="hidden">
+        <h2>Change Master Password</h2>
+        <p>Update your access password below.</p>
+        <input type="password" id="curr-pass-input" placeholder="Current Password">
+        <input type="password" id="new-pass-input" placeholder="New Password">
+        <button onclick="updatePassword()">Update Password</button>
+        <button onclick="closeChangeModal()" style="background:#6c757d; margin-top:8px;">Cancel</button>
+        <p id="change-error" style="color:red; margin-top:10px; display:none; font-size:13px;"></p>
+      </div>
+
     </div>
   </div>
 
@@ -83,7 +117,10 @@
   <div class="container" id="app-container">
     <header>
       <h1>Inventory & Production Management</h1>
-      <button onclick="logout()">Lock Application</button>
+      <div class="header-btns">
+        <button class="btn-change-pass" onclick="openChangeModal()">Change Password</button>
+        <button class="btn-lock" onclick="logout()">Lock Application</button>
+      </div>
     </header>
 
     <div class="grid">
@@ -387,23 +424,56 @@
     let priceHistory = JSON.parse(localStorage.getItem('app_price_history')) || [];
     let invoiceCart = [];
 
-    const SET_PASSWORD = "1234"; // SET YOUR DESIRED PASSWORD HERE
-
-    // AUTHENTICATION
+    // DYNAMIC PASSWORD AUTHENTICATION SYSTEM
     window.addEventListener('DOMContentLoaded', () => {
-      const auth = sessionStorage.getItem('app_is_authenticated');
-      if (auth === 'true') {
+      const storedPassword = localStorage.getItem('system_master_password');
+      const isAuthenticated = sessionStorage.getItem('app_is_authenticated');
+
+      if (isAuthenticated === 'true') {
         showApp();
       } else {
         document.getElementById('login-overlay').style.display = 'flex';
         document.getElementById('app-container').style.display = 'none';
+
+        if (!storedPassword) {
+          // First time setup screen
+          document.getElementById('setup-form-container').classList.remove('hidden');
+        } else {
+          // Regular login screen
+          document.getElementById('login-form-container').classList.remove('hidden');
+        }
       }
       renderAll();
     });
 
+    // 1. First Time Setup
+    function saveInitialPassword() {
+      const pass = document.getElementById('setup-pass-input').value;
+      const confirm = document.getElementById('setup-confirm-input').value;
+      const err = document.getElementById('setup-error');
+
+      if (!pass) {
+        err.innerText = "Password cannot be empty.";
+        err.style.display = 'block';
+        return;
+      }
+      if (pass !== confirm) {
+        err.innerText = "Passwords do not match!";
+        err.style.display = 'block';
+        return;
+      }
+
+      localStorage.setItem('system_master_password', pass);
+      sessionStorage.setItem('app_is_authenticated', 'true');
+      showApp();
+    }
+
+    // 2. Regular Login Verification
     function login() {
       const input = document.getElementById('password-input').value;
-      if (input === SET_PASSWORD) {
+      const masterPass = localStorage.getItem('system_master_password');
+
+      if (input === masterPass) {
         sessionStorage.setItem('app_is_authenticated', 'true');
         showApp();
       } else {
@@ -411,6 +481,7 @@
       }
     }
 
+    // 3. Lock Application
     function logout() {
       sessionStorage.removeItem('app_is_authenticated');
       location.reload();
@@ -419,6 +490,43 @@
     function showApp() {
       document.getElementById('login-overlay').style.display = 'none';
       document.getElementById('app-container').style.display = 'block';
+    }
+
+    // 4. Change Password Logic
+    function openChangeModal() {
+      document.getElementById('setup-form-container').classList.add('hidden');
+      document.getElementById('login-form-container').classList.add('hidden');
+      document.getElementById('change-form-container').classList.remove('hidden');
+      document.getElementById('login-overlay').style.display = 'flex';
+    }
+
+    function closeChangeModal() {
+      document.getElementById('login-overlay').style.display = 'none';
+      document.getElementById('curr-pass-input').value = '';
+      document.getElementById('new-pass-input').value = '';
+      document.getElementById('change-error').style.display = 'none';
+    }
+
+    function updatePassword() {
+      const curr = document.getElementById('curr-pass-input').value;
+      const next = document.getElementById('new-pass-input').value;
+      const masterPass = localStorage.getItem('system_master_password');
+      const err = document.getElementById('change-error');
+
+      if (curr !== masterPass) {
+        err.innerText = "Current password is incorrect.";
+        err.style.display = 'block';
+        return;
+      }
+      if (!next) {
+        err.innerText = "New password cannot be empty.";
+        err.style.display = 'block';
+        return;
+      }
+
+      localStorage.setItem('system_master_password', next);
+      alert("Password updated successfully!");
+      closeChangeModal();
     }
 
     // WORKERS
