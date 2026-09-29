@@ -1,637 +1,788 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Complete Factory Accounting & Payroll System</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventory, Manufacturing & Billing System</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: #f4f6f9; color: #333; padding: 15px; }
+    
+    /* Login Overlay */
+    #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 9999; }
+    .login-card { background: #fff; padding: 25px; border-radius: 8px; width: 90%; max-width: 360px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+    .login-card h2 { margin-bottom: 15px; font-size: 20px; }
+    .login-card input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
+    .login-card button { width: 100%; padding: 12px; background: #007bff; color: #fff; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; }
+    
+    /* Main Layout */
+    .container { max-width: 1200px; margin: 0 auto; display: none; }
+    header { background: #1a252f; color: #fff; padding: 15px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    header h1 { font-size: 20px; }
+    header button { background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
+    
+    .grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+    @media(min-width: 900px) { .grid { grid-template-columns: 1fr 1fr; } }
+    
+    .card { background: #fff; padding: 20px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    .card h2 { font-size: 18px; margin-bottom: 15px; border-bottom: 2px solid #f4f6f9; padding-bottom: 8px; color: #1a252f; }
+    
+    /* Forms */
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; margin-bottom: 5px; font-size: 14px; font-weight: 600; }
+    .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+    .btn { background: #28a745; color: #fff; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-size: 15px; width: 100%; }
+    .btn-secondary { background: #17a2b8; margin-top: 10px; }
+    .btn-warning { background: #ffc107; color: #000; }
+    
+    /* Tables */
+    .table-responsive { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+    table th, table td { border: 1px solid #dee2e6; padding: 8px; text-align: left; }
+    table th { background-color: #e9ecef; }
+    
+    /* Tally ERP 9 Invoice Styles */
+    #invoice-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; overflow-y: auto; padding: 10px; }
+    .invoice-container { background: #fff; width: 100%; max-width: 800px; margin: 20px auto; padding: 20px; border-radius: 4px; }
+    .tally-box { border: 2px solid #000; padding: 15px; font-family: 'Courier New', Courier, monospace; background: #fff; color: #000; }
+    .tally-header { text-align: center; border-bottom: 1px solid #000; padding-bottom: 10px; }
+    .tally-header h2 { font-size: 22px; text-transform: uppercase; letter-spacing: 1px; }
+    .tally-header h3 { font-size: 18px; margin-top: 4px; }
+    .tally-details-grid { display: flex; border-bottom: 1px solid #000; }
+    .tally-col { flex: 1; padding: 8px; font-size: 13px; line-height: 1.4; }
+    .border-left { border-left: 1px solid #000; }
+    .tally-table { width: 100%; border-collapse: collapse; margin-top: 0; }
+    .tally-table th, .tally-table td { border: 1px solid #000; padding: 6px; font-size: 12px; }
+    .tally-table th { background: transparent; text-align: center; }
+    .tally-total-section { border-top: 1px solid #000; padding-top: 8px; margin-top: 10px; font-size: 13px; display: flex; justify-content: space-between; }
+    .tally-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 40px; }
+    .sign-box { text-align: center; font-size: 13px; }
+
+    @media print {
+      body * { visibility: hidden; }
+      #invoice-modal, #invoice-modal * { visibility: visible; }
+      #invoice-modal { position: absolute; left: 0; top: 0; width: 100%; background: none; padding: 0; }
+      .no-print { display: none !important; }
+      .tally-box { border: 2px solid #000 !important; }
+    }
+  </style>
 </head>
-<body class="bg-slate-100 font-sans text-slate-800">
+<body>
 
-  <!-- Top Navigation -->
-  <nav class="bg-slate-900 text-white p-4 shadow-lg sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
-      <h1 class="text-xl font-bold tracking-wide">Factory Manager & ERP</h1>
-      <div class="flex flex-wrap gap-2 text-xs md:text-sm">
-        <button onclick="showTab('dashboard')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded font-semibold">Dashboard</button>
-        <button onclick="showTab('attendance')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded font-semibold">Attendance & Staff</button>
-        <button onclick="showTab('payroll')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded font-semibold">Salary & Advances</button>
-        <button onclick="showTab('workers')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded font-semibold">Production & Theft Audit</button>
-        <button onclick="showTab('inventory')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded font-semibold">Stock & Purchases</button>
-        <button onclick="showTab('parties')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded font-semibold">Debtors & Creditors</button>
-        <button onclick="showTab('invoices')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded font-semibold">Invoice</button>
-      </div>
+  <!-- PASSWORD MODAL -->
+  <div id="login-overlay">
+    <div class="login-card">
+      <h2>Enter Password</h2>
+      <input type="password" id="password-input" placeholder="Password">
+      <button onclick="login()">Log In</button>
+      <p id="login-error" style="color:red; margin-top:10px; display:none; font-size:13px;">Incorrect Password</p>
     </div>
-  </nav>
+  </div>
 
-  <div class="max-w-7xl mx-auto p-4 md:p-6">
+  <!-- MAIN APP CONTAINER -->
+  <div class="container" id="app-container">
+    <header>
+      <h1>Inventory & Production Management</h1>
+      <button onclick="logout()">Lock Application</button>
+    </header>
 
-    <!-- 1. DASHBOARD -->
-    <div id="dashboard" class="tab-content space-y-6">
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-blue-500">
-          <p class="text-gray-500 text-xs font-semibold uppercase">Raw Material Stock</p>
-          <p id="dash-raw-value" class="text-2xl font-bold text-slate-900">0 kg</p>
-        </div>
-        <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-emerald-500">
-          <p class="text-gray-500 text-xs font-semibold uppercase">Finished Products</p>
-          <p id="dash-finished-value" class="text-2xl font-bold text-slate-900">0 pcs</p>
-        </div>
-        <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-amber-500">
-          <p class="text-gray-500 text-xs font-semibold uppercase">Customer Receivables</p>
-          <p id="dash-debtors" class="text-2xl font-bold text-slate-900">$0.00</p>
-        </div>
-        <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-rose-500">
-          <p class="text-gray-500 text-xs font-semibold uppercase">Supplier Payables</p>
-          <p id="dash-creditors" class="text-2xl font-bold text-slate-900">$0.00</p>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-white p-5 rounded-lg shadow-sm">
-          <h3 class="font-bold text-slate-800 mb-3">Live Material Stock Summary</h3>
-          <ul id="dash-stock-list" class="divide-y text-sm"></ul>
-        </div>
-        <div class="bg-white p-5 rounded-lg shadow-sm">
-          <h3 class="font-bold text-slate-800 mb-3">Staff Quick Status</h3>
-          <p class="text-sm text-gray-600">Total Registered Workers: <span id="dash-total-staff" class="font-bold text-slate-900">0</span></p>
-          <p class="text-sm text-gray-600 mt-2">To record daily presence or check theft alerts, use the navigation bar above.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- 2. ATTENDANCE & STAFF MANAGEMENT -->
-    <div id="attendance" class="tab-content hidden space-y-6">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- Add Staff -->
-        <div class="bg-white p-5 rounded-lg shadow-sm space-y-4">
-          <h2 class="text-lg font-bold text-slate-800">Register New Staff/Worker</h2>
-          <form onsubmit="addStaff(event)" class="space-y-3">
-            <div>
-              <label class="block text-xs font-semibold text-gray-600 mb-1">Staff Name</label>
-              <input type="text" id="staff-name" required class="w-full border p-2 rounded text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-gray-600 mb-1">Role / Job Title</label>
-              <input type="text" id="staff-role" placeholder="e.g. Worker / Operator" required class="w-full border p-2 rounded text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-gray-600 mb-1">Monthly Base Salary ($)</label>
-              <input type="number" id="staff-salary" step="0.01" required class="w-full border p-2 rounded text-sm">
-            </div>
-            <button class="w-full bg-slate-900 text-white py-2 rounded text-sm font-semibold hover:bg-slate-800">Register Staff</button>
-          </form>
-        </div>
-
-        <!-- Mark Attendance -->
-        <div class="bg-white p-5 rounded-lg shadow-sm md:col-span-2 space-y-4">
-          <div class="flex justify-between items-center border-b pb-3">
-            <h2 class="text-lg font-bold text-slate-800">Daily Attendance Register</h2>
-            <input type="date" id="att-date" class="border p-1.5 rounded text-sm" onchange="renderAttendanceSheet()">
+    <div class="grid">
+      <!-- ADD WORKER -->
+      <div class="card">
+        <h2>1. Add Worker</h2>
+        <form id="worker-form" onsubmit="addWorker(event)">
+          <div class="form-group">
+            <label>Worker Name / ID</label>
+            <input type="text" id="worker-name" placeholder="Enter worker identifier" required>
           </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm">
-              <thead>
-                <tr class="bg-slate-100 border-b">
-                  <th class="p-2">Staff Name</th>
-                  <th class="p-2">Role</th>
-                  <th class="p-2">Status</th>
-                  <th class="p-2">Action</th>
-                </tr>
-              </thead>
-              <tbody id="att-table-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 3. PAYROLL & SALARY ADVANCES -->
-    <div id="payroll" class="tab-content hidden space-y-6">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- Pay Salary or Advance -->
-        <div class="bg-white p-5 rounded-lg shadow-sm space-y-4">
-          <h2 class="text-lg font-bold text-slate-800">Record Salary Payment / Advance</h2>
-          <form onsubmit="recordSalaryPayment(event)" class="space-y-3">
-            <div>
-              <label class="block text-xs font-semibold text-gray-600 mb-1">Select Staff</label>
-              <select id="pay-staff-select" class="w-full border p-2 rounded text-sm" required></select>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-gray-600 mb-1">Payment Type</label>
-              <select id="pay-type" class="w-full border p-2 rounded text-sm">
-                <option value="Salary">Full / Partial Monthly Salary</option>
-                <option value="Advance">Salary Advance</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-gray-600 mb-1">Amount ($)</label>
-              <input type="number" id="pay-amount" step="0.01" required class="w-full border p-2 rounded text-sm">
-            </div>
-            <button class="w-full bg-emerald-600 text-white py-2 rounded text-sm font-semibold hover:bg-emerald-700">Record Payment</button>
-          </form>
-        </div>
-
-        <!-- Payroll Summary -->
-        <div class="bg-white p-5 rounded-lg shadow-sm md:col-span-2 space-y-4">
-          <h2 class="text-lg font-bold text-slate-800">Monthly Payroll Ledger</h2>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm border-collapse">
-              <thead>
-                <tr class="bg-slate-100 border-b">
-                  <th class="p-2">Name</th>
-                  <th class="p-2">Base Salary</th>
-                  <th class="p-2">Days Present</th>
-                  <th class="p-2">Paid So Far</th>
-                  <th class="p-2">Status</th>
-                </tr>
-              </thead>
-              <tbody id="payroll-table-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 4. WORKER PRODUCTION & THEFT AUDIT -->
-    <div id="workers" class="tab-content hidden space-y-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
-        <!-- Formula Configuration -->
-        <div class="bg-white p-5 rounded-lg shadow-sm space-y-4">
-          <h2 class="text-lg font-bold text-slate-800">1. Standard Recipe / Size Consumption</h2>
-          <form onsubmit="saveFormula(event)" class="space-y-3">
-            <div>
-              <label class="block text-xs font-semibold text-gray-600 mb-1">Product Size / Code</label>
-              <input type="text" id="formula-size" placeholder="e.g. Size 40" required class="w-full border p-2 rounded text-sm">
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Std Mat A (kg / piece)</label>
-                <input type="number" step="0.001" id="formula-matA" required class="w-full border p-2 rounded text-sm">
-              </div>
-              <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Std Mat B (kg / piece)</label>
-                <input type="number" step="0.001" id="formula-matB" required class="w-full border p-2 rounded text-sm">
-              </div>
-            </div>
-            <button class="w-full bg-blue-600 text-white py-2 rounded text-sm font-semibold hover:bg-blue-700">Save Standard Consumption Formula</button>
-          </form>
-        </div>
-
-        <!-- Issue & Output Log -->
-        <div class="bg-white p-5 rounded-lg shadow-sm space-y-4">
-          <h2 class="text-lg font-bold text-slate-800">2. Record Worker Daily Production</h2>
-          <form onsubmit="logProduction(event)" class="space-y-3">
-            <div>
-              <label class="block text-xs font-semibold text-gray-600 mb-1">Assigned Worker</label>
-              <select id="work-worker" class="w-full border p-2 rounded text-sm" required></select>
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Raw Mat A Issued (kg)</label>
-                <input type="number" step="0.01" id="work-issuedA" required class="w-full border p-2 rounded text-sm">
-              </div>
-              <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Raw Mat B Issued (kg)</label>
-                <input type="number" step="0.01" id="work-issuedB" required class="w-full border p-2 rounded text-sm">
-              </div>
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Product Size Obtained</label>
-                <input type="text" id="work-size" placeholder="Size 40" required class="w-full border p-2 rounded text-sm">
-              </div>
-              <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Finished Pieces Made</label>
-                <input type="number" id="work-qty" required class="w-full border p-2 rounded text-sm">
-              </div>
-            </div>
-            <button class="w-full bg-slate-900 text-white py-2 rounded text-sm font-semibold hover:bg-slate-800">Calculate Theft Audit & Save Batch</button>
-          </form>
-        </div>
-
-      </div>
-
-      <!-- Theft Audit Table -->
-      <div class="bg-white p-5 rounded-lg shadow-sm space-y-3">
-        <h2 class="text-lg font-bold text-slate-800">Worker Loss & Theft Audit Log</h2>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm border-collapse">
-            <thead>
-              <tr class="bg-slate-100 border-b">
-                <th class="p-2">Date</th>
-                <th class="p-2">Worker</th>
-                <th class="p-2">Output Size</th>
-                <th class="p-2">Pcs Produced</th>
-                <th class="p-2">Mat A (Issued / Expected / Diff)</th>
-                <th class="p-2">Mat B (Issued / Expected / Diff)</th>
-                <th class="p-2">Audit Verdict</th>
-              </tr>
-            </thead>
-            <tbody id="worker-log-table"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- 5. INVENTORY & PURCHASES -->
-    <div id="inventory" class="tab-content hidden space-y-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-white p-5 rounded-lg shadow-sm space-y-4">
-          <h2 class="text-lg font-bold text-slate-800">Record Material Purchase</h2>
-          <form onsubmit="addPurchase(event)" class="space-y-3">
-            <div>
-              <label class="block text-xs font-semibold text-gray-600 mb-1">Material Type</label>
-              <select id="pur-type" class="w-full border p-2 rounded text-sm">
-                <option value="Mat A">Raw Material A</option>
-                <option value="Mat B">Raw Material B</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-gray-600 mb-1">Quantity Added (kg)</label>
-              <input type="number" step="0.01" id="pur-qty" required class="w-full border p-2 rounded text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-gray-600 mb-1">Total Cost ($)</label>
-              <input type="number" step="0.01" id="pur-cost" required class="w-full border p-2 rounded text-sm">
-            </div>
-            <button class="w-full bg-blue-600 text-white py-2 rounded text-sm font-semibold hover:bg-blue-700">Add to Raw Stock</button>
-          </form>
-        </div>
-
-        <div class="bg-white p-5 rounded-lg shadow-sm space-y-4">
-          <h2 class="text-lg font-bold text-slate-800">Current Warehouse Inventory</h2>
-          <div id="full-stock-details" class="text-sm space-y-2"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 6. DEBTORS & CREDITORS -->
-    <div id="parties" class="tab-content hidden space-y-6">
-      <div class="bg-white p-5 rounded-lg shadow-sm space-y-4">
-        <h2 class="text-lg font-bold text-slate-800">Debtors (Customers) & Creditors (Suppliers) Ledger</h2>
-        <form onsubmit="addLedgerEntry(event)" class="grid grid-cols-1 md:grid-cols-5 gap-3">
-          <input type="text" id="led-name" placeholder="Party Name" required class="border p-2 rounded text-sm">
-          <select id="led-type" class="border p-2 rounded text-sm">
-            <option value="Debtor">Debtor (Customer)</option>
-            <option value="Creditor">Creditor (Supplier)</option>
-          </select>
-          <select id="led-action" class="border p-2 rounded text-sm">
-            <option value="Given">Given / Sales (+)</option>
-            <option value="Received">Payment Received (-)</option>
-          </select>
-          <input type="number" id="led-amount" step="0.01" placeholder="Amount ($)" required class="border p-2 rounded text-sm">
-          <button class="bg-slate-900 text-white p-2 rounded text-sm font-semibold hover:bg-slate-800">Save Transaction</button>
+          <button type="submit" class="btn">Add Worker</button>
         </form>
+      </div>
 
-        <div class="overflow-x-auto mt-4">
-          <table class="w-full text-left text-sm border-collapse">
+      <!-- ADD RAW MATERIAL STOCK WITH RATE TRACKER -->
+      <div class="card">
+        <h2>2. Add Raw Material Stock & Price</h2>
+        <form id="rm-form" onsubmit="addRawMaterial(event)">
+          <div class="form-group">
+            <label>Raw Material Description</label>
+            <input type="text" id="rm-name" placeholder="Enter material description" required>
+          </div>
+          <div class="form-group">
+            <label>Purchase Price per Unit (₹)</label>
+            <input type="number" id="rm-rate" step="0.01" placeholder="0.00" required>
+          </div>
+          <div class="form-group">
+            <label>Quantity Bought</label>
+            <input type="number" id="rm-stock" step="0.01" placeholder="0.00" required>
+          </div>
+          <div class="form-group">
+            <label>Unit of Measurement</label>
+            <select id="rm-unit">
+              <option value="meters">Meters (m)</option>
+              <option value="pcs">Pieces (pcs)</option>
+            </select>
+          </div>
+          <button type="submit" class="btn">Save Raw Material Stock</button>
+        </form>
+      </div>
+
+      <!-- ALLOCATE RAW MATERIAL TO WORKER -->
+      <div class="card">
+        <h2>3. Issue Raw Material to Worker</h2>
+        <form id="issue-form" onsubmit="issueMaterialToWorker(event)">
+          <div class="form-group">
+            <label>Select Worker</label>
+            <select id="issue-worker-select" required></select>
+          </div>
+          <div class="form-group">
+            <label>Select Raw Material</label>
+            <select id="issue-rm-select" required></select>
+          </div>
+          <div class="form-group">
+            <label>Quantity to Issue</label>
+            <input type="number" id="issue-qty" step="0.01" min="0.01" placeholder="0.00" required>
+          </div>
+          <button type="submit" class="btn btn-warning">Issue Material to Worker</button>
+        </form>
+      </div>
+
+      <!-- REGISTER FINISHED PRODUCT & CONSUMPTION -->
+      <div class="card">
+        <h2>4. Receive Finished Goods from Worker</h2>
+        <form id="production-form" onsubmit="recordProduction(event)">
+          <div class="form-group">
+            <label>Worker</label>
+            <select id="prod-worker-select" required></select>
+          </div>
+          <div class="form-group">
+            <label>Finished Product / Variant Name</label>
+            <input type="text" id="prod-name" placeholder="Enter product name / size variant" required>
+          </div>
+          <div class="form-group">
+            <label>Selling Price per Piece (₹)</label>
+            <input type="number" id="prod-price" step="0.01" placeholder="0.00" required>
+          </div>
+          <div class="form-group">
+            <label>Quantity Produced (pcs)</label>
+            <input type="number" id="prod-qty" min="1" value="1" required>
+          </div>
+          
+          <div style="border-top:1px solid #ccc; padding-top:10px; margin-top:10px;">
+            <label><strong>Raw Material Used:</strong></label>
+            <div class="form-group" style="margin-top:5px;">
+              <label>Select Raw Material</label>
+              <select id="prod-rm-select" required></select>
+            </div>
+            <div class="form-group">
+              <label>Actual Quantity Used (per product unit)</label>
+              <input type="number" id="prod-rm-used" step="0.01" placeholder="0.00" required>
+            </div>
+          </div>
+          
+          <button type="submit" class="btn">Register Finished Product</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- COMBINED INVENTORY TABLES -->
+    <div class="grid">
+      <!-- RAW MATERIAL STOCK TABLE WITH LAST PURCHASE RATE -->
+      <div class="card">
+        <h2>Raw Material Stock & Current Rate</h2>
+        <div class="table-responsive">
+          <table>
             <thead>
-              <tr class="bg-slate-100 border-b">
-                <th class="p-2">Party Name</th>
-                <th class="p-2">Category</th>
-                <th class="p-2">Outstanding Balance</th>
+              <tr>
+                <th>Raw Material</th>
+                <th>In Factory Stock</th>
+                <th>Unit</th>
+                <th>Last Purchase Rate (₹)</th>
+                <th>Actions</th>
               </tr>
             </thead>
-            <tbody id="party-table"></tbody>
+            <tbody id="rm-stock-body">
+              <tr><td colspan="5" style="text-align:center;">No raw material added.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- FINISHED GOODS STOCK TABLE -->
+      <div class="card">
+        <h2>Finished Goods Stock</h2>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Product / Variant</th>
+                <th>Stock</th>
+                <th>Unit</th>
+                <th>Selling Price (₹)</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="goods-stock-body">
+              <tr><td colspan="5" style="text-align:center;">No finished goods available.</td></tr>
+            </tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <!-- 7. INVOICE GENERATOR -->
-    <div id="invoices" class="tab-content hidden">
-      <div class="bg-white p-8 rounded-lg shadow-sm max-w-3xl mx-auto space-y-6 print:shadow-none" id="printable-invoice">
-        <div class="flex justify-between items-start border-b pb-4">
-          <div>
-            <h1 class="text-3xl font-bold text-slate-900">TAX INVOICE</h1>
-            <p class="text-sm text-gray-500">Your Factory & Trading Co.</p>
-          </div>
-          <div class="text-right text-sm">
-            <p><strong>Date:</strong> <span id="inv-date"></span></p>
-            <p><strong>Invoice No:</strong> #INV-1001</p>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <p class="font-bold text-gray-700">Customer Details:</p>
-            <input type="text" id="inv-customer" placeholder="Customer Name & Address" class="border p-1.5 rounded w-full print:border-none">
-          </div>
-        </div>
-
-        <table class="w-full text-left text-sm border-collapse my-4">
+    <!-- RAW MATERIAL PURCHASE PRICE HISTORY -->
+    <div class="card">
+      <h2>Raw Material Price History Logs</h2>
+      <div class="table-responsive">
+        <table>
           <thead>
-            <tr class="border-b bg-slate-100">
-              <th class="p-2">Item Description / Size</th>
-              <th class="p-2 w-24">Qty</th>
-              <th class="p-2 w-28">Unit Price ($)</th>
-              <th class="p-2 w-28">Total ($)</th>
+            <tr>
+              <th>Date</th>
+              <th>Material</th>
+              <th>Old Rate (₹)</th>
+              <th>New Rate (₹)</th>
+              <th>Price Change</th>
             </tr>
           </thead>
-          <tbody>
-            <tr>
-              <td class="p-2"><input type="text" placeholder="Finished Product (Size 40)" class="border p-1 w-full print:border-none"></td>
-              <td class="p-2"><input type="number" id="inv-qty" value="1" oninput="calcInvoice()" class="border p-1 w-full print:border-none"></td>
-              <td class="p-2"><input type="number" id="inv-price" value="0" oninput="calcInvoice()" class="border p-1 w-full print:border-none"></td>
-              <td class="p-2 font-bold" id="inv-total">$0.00</td>
-            </tr>
+          <tbody id="price-history-body">
+            <tr><td colspan="5" style="text-align:center;">No price changes logged yet.</td></tr>
           </tbody>
         </table>
-
-        <div class="text-right font-bold text-xl border-t pt-4 text-slate-900">
-          Grand Total: <span id="inv-grand-total">$0.00</span>
-        </div>
-
-        <div class="pt-6 border-t flex justify-end">
-          <button onclick="window.print()" class="bg-slate-900 text-white px-6 py-2 rounded text-sm font-semibold print:hidden">Print / Save as PDF</button>
-        </div>
       </div>
     </div>
 
+    <!-- WORKER STOCK ALLOCATIONS TABLE -->
+    <div class="card">
+      <h2>Raw Material Issued to Workers</h2>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Worker</th>
+              <th>Material</th>
+              <th>Issued Balance</th>
+              <th>Unit</th>
+            </tr>
+          </thead>
+          <tbody id="worker-stock-body">
+            <tr><td colspan="4" style="text-align:center;">No material currently assigned to workers.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- BILLING SECTION -->
+    <div class="card">
+      <h2>Generate Billing Invoice</h2>
+      <form id="invoice-form" onsubmit="addToInvoice(event)">
+        <div class="grid">
+          <div class="form-group">
+            <label>Customer Name</label>
+            <input type="text" id="cust-name" placeholder="Buyer Name" required>
+          </div>
+          <div class="form-group">
+            <label>Select Finished Product</label>
+            <select id="invoice-item-select" required></select>
+          </div>
+          <div class="form-group">
+            <label>Quantity (pcs)</label>
+            <input type="number" id="invoice-qty" min="1" value="1" required>
+          </div>
+        </div>
+        <button type="submit" class="btn">Add to Bill</button>
+      </form>
+
+      <div class="table-responsive" style="margin-top:15px;">
+        <table>
+          <thead>
+            <tr>
+              <th>S.No.</th>
+              <th>Description</th>
+              <th>Qty</th>
+              <th>Unit</th>
+              <th>Rate (₹)</th>
+              <th>Amount (₹)</th>
+            </tr>
+          </thead>
+          <tbody id="cart-table-body">
+            <tr><td colspan="6" style="text-align:center;">No items added to invoice yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <button class="btn btn-secondary" onclick="generateTallyInvoice()" style="margin-top:10px;">Generate Tally ERP 9 Invoice</button>
+    </div>
+  </div>
+
+  <!-- TALLY ERP 9 INVOICE MODAL -->
+  <div id="invoice-modal">
+    <div class="invoice-container">
+      <div class="no-print" style="margin-bottom:15px; display:flex; gap:10px;">
+        <button class="btn" onclick="window.print()">Print Invoice</button>
+        <button class="btn btn-secondary" onclick="closeInvoiceModal()">Close</button>
+      </div>
+
+      <div class="tally-box">
+        <div class="tally-header">
+          <h2>TAX INVOICE</h2>
+          <h3 id="tally-comp-name">YOUR COMPANY NAME</h3>
+          <p id="tally-comp-address">Address / Contact details here</p>
+        </div>
+
+        <div class="tally-details-grid">
+          <div class="tally-col">
+            <strong>Buyer (Bill to):</strong><br>
+            <span id="tally-buyer-name">-</span>
+          </div>
+          <div class="tally-col border-left">
+            <strong>Invoice No:</strong> <span id="tally-inv-no">101</span><br>
+            <strong>Date:</strong> <span id="tally-inv-date"></span><br>
+            <strong>Payment Terms:</strong> Cash/UPI
+          </div>
+        </div>
+
+        <table class="tally-table">
+          <thead>
+            <tr>
+              <th style="width: 8%;">S.No.</th>
+              <th>Description of Goods</th>
+              <th style="width: 15%;">Quantity</th>
+              <th style="width: 15%;">Rate (₹)</th>
+              <th style="width: 10%;">per</th>
+              <th style="width: 18%;">Amount (₹)</th>
+            </tr>
+          </thead>
+          <tbody id="tally-items-body"></tbody>
+        </table>
+
+        <div class="tally-total-section">
+          <div>
+            <strong>Amount (in words):</strong><br>
+            <span id="tally-words-amount">Zero Rupees</span>
+          </div>
+          <div style="text-align: right;">
+            <strong>Total: ₹ <span id="tally-grand-total">0.00</span></strong>
+          </div>
+        </div>
+
+        <div class="tally-footer">
+          <div>
+            <p style="font-size: 11px;">Declaration: Goods once sold will not be taken back.</p>
+          </div>
+          <div class="sign-box">
+            <p>For YOUR COMPANY NAME</p>
+            <br><br>
+            <p>Authorised Signatory</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
-    // State Initialization with local Storage Persistence
-    let state = JSON.parse(localStorage.getItem('factory_erp_db')) || {
-      staff: [], // { name, role, salary, paid: 0 }
-      attendance: {}, // "YYYY-MM-DD": { "Staff Name": "Present" | "Absent" }
-      rawStock: { 'Mat A': 0, 'Mat B': 0 },
-      finishedStock: {},
-      formulas: {}, // "Size 40": { matA: 0.5, matB: 0.2 }
-      workerLogs: [],
-      parties: {}
-    };
+    // APP STATE
+    let workers = JSON.parse(localStorage.getItem('app_workers')) || [];
+    let rawMaterials = JSON.parse(localStorage.getItem('app_raw_materials')) || [];
+    let finishedGoods = JSON.parse(localStorage.getItem('app_finished_goods')) || [];
+    let workerBalances = JSON.parse(localStorage.getItem('app_worker_balances')) || [];
+    let productStandards = JSON.parse(localStorage.getItem('app_product_standards')) || {};
+    let priceHistory = JSON.parse(localStorage.getItem('app_price_history')) || [];
+    let invoiceCart = [];
 
-    function saveData() {
-      localStorage.setItem('factory_erp_db', JSON.stringify(state));
-      updateDashboard();
+    const SET_PASSWORD = "1234"; // SET YOUR DESIRED PASSWORD HERE
+
+    // AUTHENTICATION
+    window.addEventListener('DOMContentLoaded', () => {
+      const auth = sessionStorage.getItem('app_is_authenticated');
+      if (auth === 'true') {
+        showApp();
+      } else {
+        document.getElementById('login-overlay').style.display = 'flex';
+        document.getElementById('app-container').style.display = 'none';
+      }
+      renderAll();
+    });
+
+    function login() {
+      const input = document.getElementById('password-input').value;
+      if (input === SET_PASSWORD) {
+        sessionStorage.setItem('app_is_authenticated', 'true');
+        showApp();
+      } else {
+        document.getElementById('login-error').style.display = 'block';
+      }
     }
 
-    function showTab(id) {
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-      document.getElementById(id).classList.remove('hidden');
-      if (id === 'attendance') renderAttendanceSheet();
-      if (id === 'payroll') renderPayroll();
+    function logout() {
+      sessionStorage.removeItem('app_is_authenticated');
+      location.reload();
     }
 
-    // --- STAFF & ATTENDANCE ---
-    function addStaff(e) {
+    function showApp() {
+      document.getElementById('login-overlay').style.display = 'none';
+      document.getElementById('app-container').style.display = 'block';
+    }
+
+    // WORKERS
+    function addWorker(e) {
       e.preventDefault();
-      const name = document.getElementById('staff-name').value.trim();
-      const role = document.getElementById('staff-role').value.trim();
-      const salary = parseFloat(document.getElementById('staff-salary').value);
-
-      if (state.staff.find(s => s.name === name)) {
-        alert('Staff member with this name already exists.');
-        return;
+      const name = document.getElementById('worker-name').value.trim();
+      if (!workers.includes(name)) {
+        workers.push(name);
+        localStorage.setItem('app_workers', JSON.stringify(workers));
+        document.getElementById('worker-form').reset();
+        renderAll();
       }
-
-      state.staff.push({ name, role, salary, paid: 0 });
-      saveData();
-      populateStaffDropdowns();
-      alert('Staff registered successfully!');
-      e.target.reset();
     }
 
-    function renderAttendanceSheet() {
-      const date = document.getElementById('att-date').value || new Date().toISOString().split('T')[0];
-      document.getElementById('att-date').value = date;
+    // RAW MATERIALS WITH PRICE MATCHING ALERT
+    function addRawMaterial(e) {
+      e.preventDefault();
+      const name = document.getElementById('rm-name').value.trim();
+      const newRate = parseFloat(document.getElementById('rm-rate').value);
+      const stock = parseFloat(document.getElementById('rm-stock').value);
+      const unit = document.getElementById('rm-unit').value;
 
-      if (!state.attendance[date]) state.attendance[date] = {};
-
-      const tbody = document.getElementById('att-table-body');
-      if (state.staff.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">No staff registered yet. Add staff first.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = state.staff.map(s => {
-        const status = state.attendance[date][s.name] || 'Not Marked';
-        return `
-          <tr class="border-b">
-            <td class="p-2 font-medium">${s.name}</td>
-            <td class="p-2 text-gray-600">${s.role}</td>
-            <td class="p-2 font-bold ${status === 'Present' ? 'text-emerald-600' : status === 'Absent' ? 'text-rose-600' : 'text-gray-400'}">${status}</td>
-            <td class="p-2 space-x-1">
-              <button onclick="markAttendance('${date}', '${s.name}', 'Present')" class="bg-emerald-600 text-white px-2 py-1 text-xs rounded">Present</button>
-              <button onclick="markAttendance('${date}', '${s.name}', 'Absent')" class="bg-rose-600 text-white px-2 py-1 text-xs rounded">Absent</button>
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    function markAttendance(date, name, status) {
-      state.attendance[date][name] = status;
-      saveData();
-      renderAttendanceSheet();
-    }
-
-    function populateStaffDropdowns() {
-      const selectWorker = document.getElementById('work-worker');
-      const selectPay = document.getElementById('pay-staff-select');
+      const idx = rawMaterials.findIndex(r => r.name.toLowerCase() === name.toLowerCase());
       
-      const options = state.staff.map(s => `<option value="${s.name}">${s.name} (${s.role})</option>`).join('');
-      if (selectWorker) selectWorker.innerHTML = options || '<option>No Workers Found</option>';
-      if (selectPay) selectPay.innerHTML = options || '<option>No Staff Found</option>';
-    }
+      if (idx > -1) {
+        const oldRate = rawMaterials[idx].rate || 0;
+        
+        // CHECK IF PRICE CHANGED
+        if (oldRate > 0 && oldRate !== newRate) {
+          const diff = newRate - oldRate;
+          const pct = ((diff / oldRate) * 100).toFixed(1);
+          const direction = diff > 0 ? "INCREASED 📈" : "DECREASED 📉";
 
-    // --- PAYROLL & SALARIES ---
-    function recordSalaryPayment(e) {
-      e.preventDefault();
-      const name = document.getElementById('pay-staff-select').value;
-      const amount = parseFloat(document.getElementById('pay-amount').value);
+          alert(
+            `⚠️ PRICE CHANGE DETECTED FOR: ${name.toUpperCase()}\n\n` +
+            `• Previous Purchase Rate: ₹ ${oldRate.toFixed(2)} per ${unit}\n` +
+            `• New Purchase Rate: ₹ ${newRate.toFixed(2)} per ${unit}\n` +
+            `• Price ${direction} by ₹ ${Math.abs(diff).toFixed(2)} (${pct}%)\n\n` +
+            `Stock and new rate have been updated.`
+          );
 
-      const staff = state.staff.find(s => s.name === name);
-      if (staff) {
-        staff.paid = (staff.paid || 0) + amount;
-        saveData();
-        renderPayroll();
-        alert(`Payment of $${amount} recorded for ${name}`);
-        e.target.reset();
+          // Log in History
+          priceHistory.unshift({
+            date: new Date().toLocaleDateString('en-IN'),
+            material: name,
+            oldRate: oldRate,
+            newRate: newRate,
+            diff: diff
+          });
+          localStorage.setItem('app_price_history', JSON.stringify(priceHistory));
+        }
+
+        rawMaterials[idx].stock += stock;
+        rawMaterials[idx].rate = newRate; // Update to latest rate
+      } else {
+        rawMaterials.push({ name, stock, rate: newRate, unit });
       }
+
+      localStorage.setItem('app_raw_materials', JSON.stringify(rawMaterials));
+      document.getElementById('rm-form').reset();
+      renderAll();
     }
 
-    function renderPayroll() {
-      const tbody = document.getElementById('payroll-table-body');
-      if (state.staff.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">No registered staff available.</td></tr>`;
+    // ISSUE MATERIAL TO WORKER
+    function issueMaterialToWorker(e) {
+      e.preventDefault();
+      const worker = document.getElementById('issue-worker-select').value;
+      const rmIdx = document.getElementById('issue-rm-select').value;
+      const qty = parseFloat(document.getElementById('issue-qty').value);
+
+      if (rmIdx === "" || !worker) return;
+
+      const material = rawMaterials[rmIdx];
+      if (material.stock < qty) {
+        alert("Insufficient raw material stock in factory!");
         return;
       }
 
-      tbody.innerHTML = state.staff.map(s => {
-        // Calculate days present
-        let daysPresent = 0;
-        Object.values(state.attendance).forEach(dayRecord => {
-          if (dayRecord[s.name] === 'Present') daysPresent++;
+      material.stock -= qty;
+
+      let bal = workerBalances.find(b => b.worker === worker && b.rmName === material.name);
+      if (bal) {
+        bal.qty += qty;
+      } else {
+        workerBalances.push({ worker, rmName: material.name, qty, unit: material.unit });
+      }
+
+      localStorage.setItem('app_raw_materials', JSON.stringify(rawMaterials));
+      localStorage.setItem('app_worker_balances', JSON.stringify(workerBalances));
+      document.getElementById('issue-form').reset();
+      renderAll();
+    }
+
+    // PRODUCTION & OVERUSE ALERTS
+    function recordProduction(e) {
+      e.preventDefault();
+      const worker = document.getElementById('prod-worker-select').value;
+      const prodName = document.getElementById('prod-name').value.trim();
+      const price = parseFloat(document.getElementById('prod-price').value);
+      const prodQty = parseInt(document.getElementById('prod-qty').value);
+      
+      const rmIdx = document.getElementById('prod-rm-select').value;
+      const usedQtyPerUnit = parseFloat(document.getElementById('prod-rm-used').value);
+
+      if (rmIdx === "" || !worker) return;
+
+      const material = rawMaterials[rmIdx];
+      const totalRmNeeded = usedQtyPerUnit * prodQty;
+
+      let bal = workerBalances.find(b => b.worker === worker && b.rmName === material.name);
+      if (!bal || bal.qty < totalRmNeeded) {
+        alert(`Worker does not have enough ${material.name}. Required: ${totalRmNeeded} ${material.unit}.`);
+        return;
+      }
+
+      // Overuse Benchmark Alert
+      const stdKey = `${prodName.toLowerCase()}_${material.name.toLowerCase()}`;
+      if (productStandards[stdKey] !== undefined) {
+        if (usedQtyPerUnit > productStandards[stdKey]) {
+          alert(`⚠️ ALERT: QUANTITY OVERUSED!\nExpected benchmark: ${productStandards[stdKey]} ${material.unit} per piece.\nEntered: ${usedQtyPerUnit} ${material.unit} per piece.`);
+        }
+      } else {
+        productStandards[stdKey] = usedQtyPerUnit;
+        localStorage.setItem('app_product_standards', JSON.stringify(productStandards));
+      }
+
+      bal.qty -= totalRmNeeded;
+
+      const goodsIdx = finishedGoods.findIndex(g => g.name.toLowerCase() === prodName.toLowerCase());
+      if (goodsIdx > -1) {
+        finishedGoods[goodsIdx].stock += prodQty;
+        finishedGoods[goodsIdx].price = price;
+      } else {
+        finishedGoods.push({ name: prodName, stock: prodQty, price: price, unit: 'pcs' });
+      }
+
+      localStorage.setItem('app_worker_balances', JSON.stringify(workerBalances));
+      localStorage.setItem('app_finished_goods', JSON.stringify(finishedGoods));
+
+      document.getElementById('production-form').reset();
+      renderAll();
+    }
+
+    // DELETE FUNCTIONS
+    function deleteRM(idx) {
+      rawMaterials.splice(idx, 1);
+      localStorage.setItem('app_raw_materials', JSON.stringify(rawMaterials));
+      renderAll();
+    }
+
+    function deleteGoods(idx) {
+      finishedGoods.splice(idx, 1);
+      localStorage.setItem('app_finished_goods', JSON.stringify(finishedGoods));
+      renderAll();
+    }
+
+    // RENDER ALL TABLES
+    function renderAll() {
+      // Raw Material Stock Table
+      const rmBody = document.getElementById('rm-stock-body');
+      rmBody.innerHTML = '';
+      if (rawMaterials.length === 0) {
+        rmBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No raw material added.</td></tr>';
+      } else {
+        rawMaterials.forEach((r, idx) => {
+          rmBody.innerHTML += `
+            <tr>
+              <td>${r.name}</td>
+              <td>${r.stock.toFixed(2)}</td>
+              <td>${r.unit}</td>
+              <td>₹ ${r.rate ? r.rate.toFixed(2) : '0.00'}</td>
+              <td><button style="background:red; color:white; border:none; padding:3px 6px; border-radius:3px; cursor:pointer;" onclick="deleteRM(${idx})">Delete</button></td>
+            </tr>`;
         });
+      }
 
-        const paid = s.paid || 0;
-        const remaining = s.salary - paid;
+      // Finished Goods Stock Table
+      const goodsBody = document.getElementById('goods-stock-body');
+      goodsBody.innerHTML = '';
+      if (finishedGoods.length === 0) {
+        goodsBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No finished goods available.</td></tr>';
+      } else {
+        finishedGoods.forEach((g, idx) => {
+          goodsBody.innerHTML += `
+            <tr>
+              <td>${g.name}</td>
+              <td>${g.stock}</td>
+              <td>${g.unit}</td>
+              <td>₹ ${g.price.toFixed(2)}</td>
+              <td><button style="background:red; color:white; border:none; padding:3px 6px; border-radius:3px; cursor:pointer;" onclick="deleteGoods(${idx})">Delete</button></td>
+            </tr>`;
+        });
+      }
 
-        return `
-          <tr class="border-b">
-            <td class="p-2 font-bold">${s.name}</td>
-            <td class="p-2">$${s.salary.toFixed(2)}</td>
-            <td class="p-2">${daysPresent} days</td>
-            <td class="p-2 text-emerald-600 font-semibold">$${paid.toFixed(2)}</td>
-            <td class="p-2 font-bold ${remaining <= 0 ? 'text-emerald-600' : 'text-amber-600'}">
-              ${remaining <= 0 ? 'Fully Paid' : 'Due: $' + remaining.toFixed(2)}
-            </td>
-          </tr>
-        `;
-      }).join('');
+      // Price History Logs Table
+      const histBody = document.getElementById('price-history-body');
+      histBody.innerHTML = '';
+      if (priceHistory.length === 0) {
+        histBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No price changes logged yet.</td></tr>';
+      } else {
+        priceHistory.forEach(h => {
+          const color = h.diff > 0 ? 'color:red; font-weight:bold;' : 'color:green; font-weight:bold;';
+          const symbol = h.diff > 0 ? '▲ +' : '▼ ';
+          histBody.innerHTML += `
+            <tr>
+              <td>${h.date}</td>
+              <td>${h.material}</td>
+              <td>₹ ${h.oldRate.toFixed(2)}</td>
+              <td>₹ ${h.newRate.toFixed(2)}</td>
+              <td style="${color}">${symbol}₹ ${Math.abs(h.diff).toFixed(2)}</td>
+            </tr>`;
+        });
+      }
+
+      // Worker Allocations Table
+      const wbBody = document.getElementById('worker-stock-body');
+      wbBody.innerHTML = '';
+      const activeBals = workerBalances.filter(b => b.qty > 0);
+      if (activeBals.length === 0) {
+        wbBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No material currently assigned to workers.</td></tr>';
+      } else {
+        activeBals.forEach(b => {
+          wbBody.innerHTML += `
+            <tr>
+              <td>${b.worker}</td>
+              <td>${b.rmName}</td>
+              <td>${b.qty.toFixed(2)}</td>
+              <td>${b.unit}</td>
+            </tr>`;
+        });
+      }
+
+      updateDropdowns();
     }
 
-    // --- RECIPES & PRODUCTION AUDIT ---
-    function saveFormula(e) {
-      e.preventDefault();
-      const size = document.getElementById('formula-size').value.trim();
-      state.formulas[size] = {
-        matA: parseFloat(document.getElementById('formula-matA').value),
-        matB: parseFloat(document.getElementById('formula-matB').value)
-      };
-      saveData();
-      alert(`Standard consumption saved for ${size}`);
-      e.target.reset();
-    }
+    function updateDropdowns() {
+      const issueWorker = document.getElementById('issue-worker-select');
+      const prodWorker = document.getElementById('prod-worker-select');
+      const issueRm = document.getElementById('issue-rm-select');
+      const prodRm = document.getElementById('prod-rm-select');
+      const invoiceSelect = document.getElementById('invoice-item-select');
 
-    function logProduction(e) {
-      e.preventDefault();
-      const worker = document.getElementById('work-worker').value;
-      const issuedA = parseFloat(document.getElementById('work-issuedA').value);
-      const issuedB = parseFloat(document.getElementById('work-issuedB').value);
-      const size = document.getElementById('work-size').value.trim();
-      const qty = parseInt(document.getElementById('work-qty').value);
-
-      const formula = state.formulas[size] || { matA: 0, matB: 0 };
-      const expectedA = formula.matA * qty;
-      const expectedB = formula.matB * qty;
-
-      const diffA = issuedA - expectedA;
-      const diffB = issuedB - expectedB;
-
-      // Detect extra consumption beyond standard margin (0.2 kg buffer)
-      const isTheft = diffA > 0.2 || diffB > 0.2;
-
-      state.rawStock['Mat A'] = Math.max(0, (state.rawStock['Mat A'] || 0) - issuedA);
-      state.rawStock['Mat B'] = Math.max(0, (state.rawStock['Mat B'] || 0) - issuedB);
-      state.finishedStock[size] = (state.finishedStock[size] || 0) + qty;
-
-      state.workerLogs.unshift({
-        date: new Date().toLocaleDateString(),
-        worker, size, qty, issuedA, expectedA, diffA, issuedB, expectedB, diffB, isTheft
+      issueWorker.innerHTML = '<option value="">-- Select Worker --</option>';
+      prodWorker.innerHTML = '<option value="">-- Select Worker --</option>';
+      workers.forEach(w => {
+        issueWorker.innerHTML += `<option value="${w}">${w}</option>`;
+        prodWorker.innerHTML += `<option value="${w}">${w}</option>`;
       });
 
-      saveData();
-      renderWorkerLogs();
-      alert('Production run logged successfully!');
-      e.target.reset();
-    }
-
-    function renderWorkerLogs() {
-      const tbody = document.getElementById('worker-log-table');
-      tbody.innerHTML = state.workerLogs.map(log => `
-        <tr class="border-b ${log.isTheft ? 'bg-rose-50' : ''}">
-          <td class="p-2">${log.date}</td>
-          <td class="p-2 font-bold">${log.worker}</td>
-          <td class="p-2">${log.size}</td>
-          <td class="p-2">${log.qty} pcs</td>
-          <td class="p-2">${log.issuedA} / ${log.expectedA.toFixed(1)} (${log.diffA > 0 ? '+' : ''}${log.diffA.toFixed(1)})</td>
-          <td class="p-2">${log.issuedB} / ${log.expectedB.toFixed(1)} (${log.diffB > 0 ? '+' : ''}${log.diffB.toFixed(1)})</td>
-          <td class="p-2 font-bold ${log.isTheft ? 'text-rose-600' : 'text-emerald-600'}">
-            ${log.isTheft ? '⚠️ Excess Material Consumed' : 'OK (Normal)'}
-          </td>
-        </tr>
-      `).join('');
-    }
-
-    // --- INVENTORY PURCHASES ---
-    function addPurchase(e) {
-      e.preventDefault();
-      const type = document.getElementById('pur-type').value;
-      const qty = parseFloat(document.getElementById('pur-qty').value);
-      state.rawStock[type] = (state.rawStock[type] || 0) + qty;
-      saveData();
-      alert('Raw Stock updated!');
-      e.target.reset();
-    }
-
-    // --- LEDGERS (DEBTORS & CREDITORS) ---
-    function addLedgerEntry(e) {
-      e.preventDefault();
-      const name = document.getElementById('led-name').value.trim();
-      const type = document.getElementById('led-type').value;
-      const action = document.getElementById('led-action').value;
-      const amount = parseFloat(document.getElementById('led-amount').value);
-
-      if (!state.parties[name]) state.parties[name] = { type, balance: 0 };
-
-      if (action === 'Given') state.parties[name].balance += amount;
-      else state.parties[name].balance -= amount;
-
-      saveData();
-      renderParties();
-      e.target.reset();
-    }
-
-    function renderParties() {
-      const tbody = document.getElementById('party-table');
-      tbody.innerHTML = Object.keys(state.parties).map(name => `
-        <tr class="border-b">
-          <td class="p-2 font-bold">${name}</td>
-          <td class="p-2">${state.parties[name].type}</td>
-          <td class="p-2 font-semibold">$${state.parties[name].balance.toFixed(2)}</td>
-        </tr>
-      `).join('');
-    }
-
-    // --- DASHBOARD UPDATES ---
-    function updateDashboard() {
-      document.getElementById('dash-raw-value').innerText = `${((state.rawStock['Mat A'] || 0) + (state.rawStock['Mat B'] || 0)).toFixed(1)} kg`;
-      
-      const totalFinished = Object.values(state.finishedStock).reduce((a, b) => a + b, 0);
-      document.getElementById('dash-finished-value').innerText = `${totalFinished} pcs`;
-
-      let debtors = 0, creditors = 0;
-      Object.values(state.parties).forEach(p => {
-        if (p.type === 'Debtor') debtors += p.balance;
-        else creditors += p.balance;
+      issueRm.innerHTML = '<option value="">-- Select Raw Material --</option>';
+      prodRm.innerHTML = '<option value="">-- Select Raw Material --</option>';
+      rawMaterials.forEach((r, idx) => {
+        issueRm.innerHTML += `<option value="${idx}">${r.name} (${r.stock.toFixed(2)} ${r.unit})</option>`;
+        prodRm.innerHTML += `<option value="${idx}">${r.name} (${r.unit})</option>`;
       });
 
-      document.getElementById('dash-debtors').innerText = `$${debtors.toFixed(2)}`;
-      document.getElementById('dash-creditors').innerText = `$${creditors.toFixed(2)}`;
-      document.getElementById('dash-total-staff').innerText = state.staff.length;
-
-      const stockList = document.getElementById('dash-stock-list');
-      const fullStockDetails = document.getElementById('full-stock-details');
-      
-      const stockHtml = `
-        <li class="py-1"><strong>Raw Material A:</strong> ${(state.rawStock['Mat A'] || 0).toFixed(1)} kg</li>
-        <li class="py-1"><strong>Raw Material B:</strong> ${(state.rawStock['Mat B'] || 0).toFixed(1)} kg</li>
-        ` + Object.keys(state.finishedStock).map(s => `<li class="py-1"><strong>Finished (${s}):</strong> ${state.finishedStock[s]} pcs</li>`).join('');
-
-      stockList.innerHTML = stockHtml;
-      if (fullStockDetails) fullStockDetails.innerHTML = stockHtml;
+      invoiceSelect.innerHTML = '<option value="">-- Select Goods --</option>';
+      finishedGoods.forEach((g, idx) => {
+        invoiceSelect.innerHTML += `<option value="${idx}">${g.name} (Stock: ${g.stock} pcs - ₹${g.price})</option>`;
+      });
     }
 
-    // --- INVOICE CALCULATION ---
-    function calcInvoice() {
-      const qty = parseFloat(document.getElementById('inv-qty').value) || 0;
-      const price = parseFloat(document.getElementById('inv-price').value) || 0;
-      const total = qty * price;
-      document.getElementById('inv-total').innerText = `$${total.toFixed(2)}`;
-      document.getElementById('inv-grand-total').innerText = `$${total.toFixed(2)}`;
+    // INVOICE LOGIC
+    function addToInvoice(e) {
+      e.preventDefault();
+      const idx = document.getElementById('invoice-item-select').value;
+      const qty = parseInt(document.getElementById('invoice-qty').value);
+      if (idx === "") return;
+
+      const item = finishedGoods[idx];
+      if (item.stock < qty) {
+        alert("Insufficient finished goods stock!");
+        return;
+      }
+
+      item.stock -= qty;
+      localStorage.setItem('app_finished_goods', JSON.stringify(finishedGoods));
+
+      invoiceCart.push({
+        name: item.name,
+        qty: qty,
+        unit: 'pcs',
+        price: item.price,
+        amount: item.price * qty
+      });
+
+      renderCart();
+      renderAll();
     }
 
-    // App Initialization
-    document.getElementById('inv-date').innerText = new Date().toLocaleDateString();
-    populateStaffDropdowns();
-    renderWorkerLogs();
-    renderParties();
-    updateDashboard();
+    function renderCart() {
+      const cartBody = document.getElementById('cart-table-body');
+      cartBody.innerHTML = '';
+      if (invoiceCart.length === 0) {
+        cartBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No items added to invoice yet.</td></tr>';
+        return;
+      }
+      invoiceCart.forEach((item, idx) => {
+        cartBody.innerHTML += `
+          <tr>
+            <td>${idx + 1}</td>
+            <td>${item.name}</td>
+            <td>${item.qty}</td>
+            <td>${item.unit}</td>
+            <td>₹ ${item.price.toFixed(2)}</td>
+            <td>₹ ${item.amount.toFixed(2)}</td>
+          </tr>`;
+      });
+    }
+
+    function generateTallyInvoice() {
+      if (invoiceCart.length === 0) {
+        alert("Please add items to invoice first.");
+        return;
+      }
+
+      const buyerName = document.getElementById('cust-name').value.trim() || 'Cash Customer';
+      const tallyBody = document.getElementById('tally-items-body');
+      tallyBody.innerHTML = '';
+      let grandTotal = 0;
+
+      invoiceCart.forEach((item, idx) => {
+        grandTotal += item.amount;
+        tallyBody.innerHTML += `
+          <tr>
+            <td style="text-align:center;">${idx + 1}</td>
+            <td>${item.name}</td>
+            <td style="text-align:right;">${item.qty} pcs</td>
+            <td style="text-align:right;">${item.price.toFixed(2)}</td>
+            <td style="text-align:center;">pcs</td>
+            <td style="text-align:right;">${item.amount.toFixed(2)}</td>
+          </tr>`;
+      });
+
+      for (let i = invoiceCart.length; i < 8; i++) {
+        tallyBody.innerHTML += `<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>`;
+      }
+
+      document.getElementById('tally-buyer-name').innerText = buyerName;
+      document.getElementById('tally-inv-date').innerText = new Date().toLocaleDateString('en-IN');
+      document.getElementById('tally-grand-total').innerText = grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+      document.getElementById('tally-words-amount').innerText = numberToWords(Math.round(grandTotal)) + " Rupees Only";
+
+      document.getElementById('invoice-modal').style.display = 'block';
+    }
+
+    function closeInvoiceModal() {
+      document.getElementById('invoice-modal').style.display = 'none';
+    }
+
+    function numberToWords(num) {
+      const a = ['','One ','Two ','Three ','Four ','Five ','Six ','Seven ','Eight ','Nine ','Ten ','Eleven ','Twelve ','Thirteen ','Fourteen ','Fifteen ','Sixteen ','Seventeen ','Eighteen ','Nineteen '];
+      const b = ['', '', 'Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+      if ((num = num.toString()).length > 9) return 'Overflow';
+      let n = ('000000000' + num).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+      if (!n) return ''; 
+      let str = '';
+      str += (n[1] != 0) ? (a[Number(n[1])] || b[n[1][0]] + ' ' + a[n[1][1]]) + 'Crore ' : '';
+      str += (n[2] != 0) ? (a[Number(n[2])] || b[n[2][0]] + ' ' + a[n[2][1]]) + 'Lakh ' : '';
+      str += (n[3] != 0) ? (a[Number(n[3])] || b[n[3][0]] + ' ' + a[n[3][1]]) + 'Thousand ' : '';
+      str += (n[4] != 0) ? (a[Number(n[4])] || b[n[4][0]] + ' ' + a[n[4][1]]) + 'Hundred ' : '';
+      str += (n[5] != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n[5])] || b[n[5][0]] + ' ' + a[n[5][1]]) : '';
+      return str.trim() || 'Zero';
+    }
   </script>
 </body>
 </html>
