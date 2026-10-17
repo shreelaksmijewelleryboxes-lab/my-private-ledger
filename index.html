@@ -209,6 +209,19 @@
         </div>
       </div>
 
+      <!-- NEW: Bulk Uniform Subcategory Template Card -->
+      <div class="card" style="border-left: 4px solid var(--warning);">
+        <h2>Uniform Subcategory Tool (Deduplicate & Bulk Apply)</h2>
+        <p style="font-size: 13px; color: #666; margin-bottom: 12px;">
+          Clean up duplicate subcategories and instantly apply uniform stages to every Root SKU.
+        </p>
+        <div class="form-group">
+          <label>Uniform Subcategories to Apply (comma separated)</label>
+          <input type="text" id="uniform-sub-names" value="Stage 1: Raw Cut, Stage 2: Assembly, Stage 3: Finished Box">
+        </div>
+        <button type="button" class="btn btn-warning" onclick="applyUniformSubcategories()">Clean Duplicates & Apply to All Root SKUs</button>
+      </div>
+
       <div class="card">
         <h2>SKU Sub-Category Hierarchy Tree</h2>
         <div id="sku-tree-display"></div>
@@ -366,7 +379,7 @@
     <div id="tab-production" class="tab-panel">
       <div class="grid">
         <div class="card">
-          <h2>Issue N Raw Materials to Worker</h2>
+          <h2>Issue Raw Materials to Worker</h2>
           <form onsubmit="issueMaterialsToWorker(event)">
             <div class="form-group">
               <label>Worker</label>
@@ -656,6 +669,58 @@
         }
       }
       return null;
+    }
+
+    // DEDUPLICATE AND APPLY UNIFORM SUBCATEGORIES TOOL
+    function deduplicateNodes(nodes) {
+      const seen = new Set();
+      return nodes.filter(node => {
+        const identifier = node.name.trim().toLowerCase();
+        if (seen.has(identifier)) {
+          return false; // Filter out duplicate
+        }
+        seen.add(identifier);
+        if (node.children && node.children.length > 0) {
+          node.children = deduplicateNodes(node.children);
+        }
+        return true;
+      });
+    }
+
+    function applyUniformSubcategories() {
+      const inputVal = document.getElementById('uniform-sub-names').value;
+      const names = inputVal.split(',').map(n => n.trim()).filter(n => n.length > 0);
+      if (names.length === 0) {
+        alert("Please enter at least one subcategory name.");
+        return;
+      }
+
+      // 1. Deduplicate tree
+      skuTree = deduplicateNodes(skuTree);
+
+      // 2. Inject subcategories into every root SKU
+      skuTree.forEach(rootNode => {
+        if (!rootNode.children) rootNode.children = [];
+        names.forEach(subName => {
+          const exists = rootNode.children.some(
+            child => child.name.toLowerCase() === subName.toLowerCase()
+          );
+          if (!exists) {
+            rootNode.children.push({
+              id: Date.now().toString() + Math.floor(Math.random() * 1000),
+              parentId: rootNode.id,
+              name: subName,
+              stock: 0,
+              price: 0,
+              children: []
+            });
+          }
+        });
+      });
+
+      localStorage.setItem('erp_sku_tree', JSON.stringify(skuTree));
+      alert("Duplicates removed and uniform subcategories successfully applied to all root SKUs!");
+      renderAll();
     }
 
     // 2. RAW MATERIAL & PRICE INFLATION SURGE RADAR
