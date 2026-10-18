@@ -189,7 +189,7 @@
               </div>
               <div class="form-group">
                 <label>Sub-Category / Stage / Variant Name</label>
-                <input type="text" id="sku-name" placeholder="e.g. Empty Box / Red Royal / Taped Stage" required>
+                <input type="text" id="sku-name" placeholder="e.g. Box Series A" required>
               </div>
               <div class="form-row">
                 <div class="form-group">
@@ -231,15 +231,15 @@
           </div>
         </div>
 
-        <!-- NEW: Uniform Multi-Level Subcategory Tool Card -->
+        <!-- Uniform Multi-Level Subcategory Tool Card -->
         <div class="card" style="border-left: 4px solid var(--warning);">
-          <h2>Multi-Level Hierarchy Tool (Deduplicate & Apply Sub/Sub-Categories)</h2>
+          <h2>Multi-Level Hierarchy Tool (Apply Empty/Taped/Ready -> Regular/Flap/Gaadi)</h2>
           <p style="font-size: 13px; color: #666; margin-bottom: 12px;">
-            Removes duplicate SKUs and automatically builds: 
+            Automatically ensures: 
             <br><strong>Sub Categories:</strong> Empty, Taped, Ready 
-            <br><strong>Sub-Sub Categories (under each):</strong> Flap, Taped, Regular
+            <br><strong>Sub-Sub Categories (under each):</strong> Regular, Flap, Gaadi
           </p>
-          <button type="button" class="btn btn-warning" onclick="applyUniformSubcategories()">Clean Duplicates & Apply Multi-Level Hierarchy</button>
+          <button type="button" class="btn btn-warning" onclick="applyUniformSubcategories()">Clean & Apply Strict Multi-Level Hierarchy</button>
         </div>
 
         <div class="card">
@@ -367,7 +367,7 @@
               </div>
               <div class="form-group">
                 <label>Current Assigned Work Activity</label>
-                <input type="text" id="att-task" placeholder="e.g. Taping Box Type 1">
+                <input type="text" id="att-task" placeholder="e.g. Assembly Line">
               </div>
               <button type="submit" class="btn btn-warning">Save Attendance Log</button>
             </form>
@@ -605,6 +605,10 @@
     let columnVisibility = JSON.parse(localStorage.getItem('erp_column_visibility')) || {};
     let activeCart = [];
 
+    // STRICT CONFIGURATION LISTS
+    const SUB_CATEGORIES_LIST = ["Empty", "Taped", "Ready"];
+    const SUB_SUBCATEGORIES_LIST = ["Regular", "Flap", "Gaadi"];
+
     // AUTHENTICATION SYSTEM
     window.addEventListener('DOMContentLoaded', () => {
       const storedPass = localStorage.getItem('system_master_pass');
@@ -669,13 +673,10 @@
       const newItem = { id: Date.now().toString(), parentId, name, stock, price, children: [] };
 
       if (parentId === 'root') {
-        // Automatically inject sub-categories (Empty, Taped, Ready) and sub-sub-categories (Flap, Taped, Regular)
-        const subCategoriesList = ["Empty", "Taped", "Ready"];
-        const subSubCategoriesList = ["Flap", "Taped", "Regular"];
-
-        subCategoriesList.forEach(subName => {
+        // Automatically inject sub-categories (Empty, Taped, Ready) and sub-sub-categories (Regular, Flap, Gaadi)
+        SUB_CATEGORIES_LIST.forEach(subName => {
           const subId = Date.now().toString() + Math.floor(Math.random() * 10000);
-          const subChildren = subSubCategoriesList.map(subSubName => ({
+          const subChildren = SUB_SUBCATEGORIES_LIST.map(subSubName => ({
             id: Date.now().toString() + Math.floor(Math.random() * 10000),
             parentId: subId,
             name: subSubName,
@@ -720,34 +721,12 @@
       return null;
     }
 
-    // DEDUPLICATE AND APPLY MULTI-LEVEL HIERARCHY TOOL
-    function deduplicateNodes(nodes) {
-      const seen = new Set();
-      return nodes.filter(node => {
-        const identifier = node.name.trim().toLowerCase();
-        if (seen.has(identifier)) {
-          return false; // Filter out duplicate
-        }
-        seen.add(identifier);
-        if (node.children && node.children.length > 0) {
-          node.children = deduplicateNodes(node.children);
-        }
-        return true;
-      });
-    }
-
+    // APPLY STRICT HIERARCHY TOOL (Empty, Taped, Ready -> Regular, Flap, Gaadi)
     function applyUniformSubcategories() {
-      // 1. Clean/Deduplicate existing tree first
-      skuTree = deduplicateNodes(skuTree);
-
-      const subCategoriesList = ["Empty", "Taped", "Ready"];
-      const subSubCategoriesList = ["Flap", "Taped", "Regular"];
-
-      // 2. Inject hierarchical structure into every root SKU
       skuTree.forEach(rootNode => {
         if (!rootNode.children) rootNode.children = [];
 
-        subCategoriesList.forEach(subName => {
+        SUB_CATEGORIES_LIST.forEach(subName => {
           let subNode = rootNode.children.find(
             child => child.name.toLowerCase() === subName.toLowerCase()
           );
@@ -764,9 +743,8 @@
             rootNode.children.push(subNode);
           }
 
-          // Ensure sub-sub categories exist under each subcategory
           if (!subNode.children) subNode.children = [];
-          subSubCategoriesList.forEach(subSubName => {
+          SUB_SUBCATEGORIES_LIST.forEach(subSubName => {
             const subSubExists = subNode.children.some(
               subChild => subChild.name.toLowerCase() === subSubName.toLowerCase()
             );
@@ -786,7 +764,7 @@
       });
 
       localStorage.setItem('erp_sku_tree', JSON.stringify(skuTree));
-      alert("Duplicates removed and multi-level hierarchy (Empty/Taped/Ready -> Flap/Taped/Regular) successfully applied!");
+      alert("Hierarchy successfully synchronized with Empty/Taped/Ready and Regular/Flap/Gaadi sub-categories!");
       renderAll();
     }
 
@@ -862,7 +840,6 @@
       sku.stock -= ord.qty;
       ord.status = 'FULFILLED';
 
-      // Auto add to Accounting Ledger as Receivable Debtor
       ledger.push({
         id: Date.now().toString(),
         entity: ord.customer,
@@ -1055,13 +1032,11 @@
 
     // RENDER ALL SCREENS
     function renderAll() {
-      // SKU Tree
       const treeDiv = document.getElementById('sku-tree-display');
       treeDiv.innerHTML = '';
       if (skuTree.length === 0) treeDiv.innerHTML = '<p style="color:#777;">No SKUs configured.</p>';
       else treeDiv.appendChild(buildTreeHTML(skuTree));
 
-      // Price Radar
       const prBody = document.getElementById('price-radar-body');
       prBody.innerHTML = '';
       priceRadar.forEach(p => {
@@ -1074,7 +1049,6 @@
         </tr>`;
       });
 
-      // Orders
       const ordBody = document.getElementById('orders-list-body');
       ordBody.innerHTML = '';
       orders.forEach(o => {
@@ -1090,7 +1064,6 @@
         </tr>`;
       });
 
-      // Payroll
       const prlBody = document.getElementById('payroll-body');
       prlBody.innerHTML = '';
       workers.forEach(w => {
@@ -1107,7 +1080,6 @@
         </tr>`;
       });
 
-      // Consumption Variance
       const cvBody = document.getElementById('consumption-variance-body');
       cvBody.innerHTML = '';
       usageAudit.forEach(a => {
@@ -1122,7 +1094,6 @@
         </tr>`;
       });
 
-      // Ledger
       const lbBody = document.getElementById('ledger-balances-body');
       lbBody.innerHTML = '';
       const entityBalances = {};
@@ -1138,7 +1109,6 @@
         </tr>`;
       });
 
-      // Invoices
       const invBody = document.getElementById('invoice-tracker-body');
       invBody.innerHTML = '';
       const today = new Date().toISOString().split('T')[0];
