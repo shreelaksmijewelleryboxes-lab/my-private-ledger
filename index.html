@@ -177,15 +177,15 @@
   <div class="app-viewport">
     <div class="container">
 
-      <!-- TAB 1: INFINITE SKUs, SUB-CATEGORIES & RAW MATERIAL -->
+      <!-- TAB 1: INFINITE SKUs & CUSTOM SUB-CATEGORIES -->
       <div id="tab-inventory" class="tab-panel active">
         <div class="grid">
           <div class="card">
-            <h2>Add New Product SKU</h2>
+            <h2>Add New Main Product SKU</h2>
             <form onsubmit="addCategoryItem(event)">
               <div class="form-group">
-                <label>Product / SKU Name</label>
-                <input type="text" id="sku-name" placeholder="e.g. Standard Box" required>
+                <label>Main Product / SKU Name</label>
+                <input type="text" id="sku-name" placeholder="e.g. Cardboard Box" required>
               </div>
               <div class="form-row">
                 <div class="form-group">
@@ -197,49 +197,63 @@
                   <input type="number" id="sku-price" step="0.01" value="0.00" required>
                 </div>
               </div>
-              <button type="submit" class="btn">Add Product SKU (Auto-adds Empty, Taped, Ready & Flap, Regular, Gaddi)</button>
+              <button type="submit" class="btn">Add Main SKU</button>
             </form>
           </div>
 
           <div class="card">
-            <h2>Raw Material Purchase & Price Inflation Radar</h2>
-            <form onsubmit="addRawMaterial(event)">
+            <h2>Add Custom Sub-Category or Sub-Sub-Category</h2>
+            <form onsubmit="addSubcategoryItem(event)">
               <div class="form-group">
-                <label>Raw Material Description</label>
-                <input type="text" id="rm-name" placeholder="e.g. Tape Roll 2-inch" required>
+                <label>Select Parent SKU / Category</label>
+                <select id="parent-sku-select" required></select>
+              </div>
+              <div class="form-group">
+                <label>Sub-Category / Variant Name</label>
+                <input type="text" id="sub-sku-name" placeholder="e.g. Small Size / Taped Variant" required>
               </div>
               <div class="form-row">
                 <div class="form-group">
-                  <label>Purchase Rate (₹)</label>
-                  <input type="number" id="rm-rate" step="0.01" required>
+                  <label>Stock Quantity</label>
+                  <input type="number" id="sub-sku-stock" value="0" min="0" required>
                 </div>
                 <div class="form-group">
-                  <label>Stock Bought</label>
-                  <input type="number" id="rm-stock" step="0.01" required>
-                </div>
-                <div class="form-group">
-                  <label>Unit</label>
-                  <input type="text" id="rm-unit" placeholder="meters, pcs, kg" required>
+                  <label>Unit Price (₹)</label>
+                  <input type="number" id="sub-sku-price" step="0.01" value="0.00" required>
                 </div>
               </div>
-              <button type="submit" class="btn">Record Raw Material Stock</button>
+              <button type="submit" class="btn btn-warning">Add Custom Sub-Item</button>
             </form>
           </div>
         </div>
 
-        <!-- Uniform Multi-Level Subcategory Tool Card -->
-        <div class="card" style="border-left: 4px solid var(--warning);">
-          <h2>Strict Hierarchy Sync Tool (Empty, Taped, Ready -> Flap, Regular, Gaddi)</h2>
-          <p style="font-size: 13px; color: #666; margin-bottom: 12px;">
-            Ensures all existing and new products have the required structure: 
-            <br><strong>Sub Categories:</strong> Empty, Taped, Ready 
-            <br><strong>Sub-Sub Categories (under each):</strong> Flap, Regular, Gaddi
-          </p>
-          <button type="button" class="btn btn-warning" onclick="applyUniformSubcategories()">Clean & Apply Strict Hierarchy</button>
+        <div class="card">
+          <h2>Raw Material Purchase & Price Inflation Radar</h2>
+          <form onsubmit="addRawMaterial(event)">
+            <div class="form-group">
+              <label>Raw Material Description</label>
+              <input type="text" id="rm-name" placeholder="e.g. Tape Roll 2-inch" required>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Purchase Rate (₹)</label>
+                <input type="number" id="rm-rate" step="0.01" required>
+              </div>
+              <div class="form-group">
+                <label>Stock Bought</label>
+                <input type="number" id="rm-stock" step="0.01" required>
+              </div>
+              <div class="form-group">
+                <label>Unit</label>
+                <input type="text" id="rm-unit" placeholder="meters, pcs, kg" required>
+              </div>
+            </div>
+            <button type="submit" class="btn">Record Raw Material Stock</button>
+          </form>
         </div>
 
         <div class="card">
-          <h2>SKU Sub-Category Hierarchy Tree</h2>
+          <h2>SKU Custom Hierarchy Tree</h2>
           <div id="sku-tree-display"></div>
         </div>
 
@@ -601,10 +615,6 @@
     let columnVisibility = JSON.parse(localStorage.getItem('erp_column_visibility')) || {};
     let activeCart = [];
 
-    // STRICT CONFIGURATION LISTS
-    const SUB_CATEGORIES_LIST = ["Empty", "Taped", "Ready"];
-    const SUB_SUBCATEGORIES_LIST = ["Flap", "Regular", "Gaddi"];
-
     // AUTHENTICATION SYSTEM
     window.addEventListener('DOMContentLoaded', () => {
       const storedPass = localStorage.getItem('system_master_pass');
@@ -658,7 +668,7 @@
       event.target.classList.add('active');
     }
 
-    // 1. TOP-LEVEL SKUs WITH AUTOMATED SUB & SUB-SUB-CATEGORIES
+    // 1. DYNAMIC SKUs & CUSTOM SUB-CATEGORIES
     function addCategoryItem(e) {
       e.preventDefault();
       const name = document.getElementById('sku-name').value.trim();
@@ -674,28 +684,6 @@
         children: [] 
       };
 
-      // Automatically inject Sub-Categories (Empty, Taped, Ready) and Sub-Sub-Categories (Flap, Regular, Gaddi)
-      SUB_CATEGORIES_LIST.forEach(subName => {
-        const subId = Date.now().toString() + Math.floor(Math.random() * 10000);
-        const subChildren = SUB_SUBCATEGORIES_LIST.map(subSubName => ({
-          id: Date.now().toString() + Math.floor(Math.random() * 10000),
-          parentId: subId,
-          name: subSubName,
-          stock: 0,
-          price: 0,
-          children: []
-        }));
-
-        newItem.children.push({
-          id: subId,
-          parentId: newItem.id,
-          name: subName,
-          stock: 0,
-          price: 0,
-          children: subChildren
-        });
-      });
-
       skuTree.push(newItem);
       localStorage.setItem('erp_sku_tree', JSON.stringify(skuTree));
       
@@ -703,6 +691,38 @@
       document.getElementById('sku-stock').value = '0';
       document.getElementById('sku-price').value = '0.00';
       renderAll();
+    }
+
+    function addSubcategoryItem(e) {
+      e.preventDefault();
+      const parentId = document.getElementById('parent-sku-select').value;
+      const name = document.getElementById('sub-sku-name').value.trim();
+      const stock = parseInt(document.getElementById('sub-sku-stock').value) || 0;
+      const price = parseFloat(document.getElementById('sub-sku-price').value) || 0;
+
+      const parentNode = findNodeById(skuTree, parentId);
+      if (!parentNode) {
+        alert("Selected parent category not found!");
+        return;
+      }
+
+      const subItem = {
+        id: Date.now().toString(),
+        parentId: parentId,
+        name,
+        stock,
+        price,
+        children: []
+      };
+
+      parentNode.children.push(subItem);
+      localStorage.setItem('erp_sku_tree', JSON.stringify(skuTree));
+
+      document.getElementById('sub-sku-name').value = '';
+      document.getElementById('sub-sku-stock').value = '0';
+      document.getElementById('sub-sku-price').value = '0.00';
+      renderAll();
+      alert("Custom sub-category successfully added!");
     }
 
     function findNodeById(nodes, id) {
@@ -714,53 +734,6 @@
         }
       }
       return null;
-    }
-
-    // APPLY STRICT HIERARCHY TOOL (Empty, Taped, Ready -> Flap, Regular, Gaddi)
-    function applyUniformSubcategories() {
-      skuTree.forEach(rootNode => {
-        if (!rootNode.children) rootNode.children = [];
-
-        SUB_CATEGORIES_LIST.forEach(subName => {
-          let subNode = rootNode.children.find(
-            child => child.name.toLowerCase() === subName.toLowerCase()
-          );
-
-          if (!subNode) {
-            subNode = {
-              id: Date.now().toString() + Math.floor(Math.random() * 10000),
-              parentId: rootNode.id,
-              name: subName,
-              stock: 0,
-              price: 0,
-              children: []
-            };
-            rootNode.children.push(subNode);
-          }
-
-          if (!subNode.children) subNode.children = [];
-          SUB_SUBCATEGORIES_LIST.forEach(subSubName => {
-            const subSubExists = subNode.children.some(
-              subChild => subChild.name.toLowerCase() === subSubName.toLowerCase()
-            );
-
-            if (!subSubExists) {
-              subNode.children.push({
-                id: Date.now().toString() + Math.floor(Math.random() * 10000),
-                parentId: subNode.id,
-                name: subSubName,
-                stock: 0,
-                price: 0,
-                children: []
-              });
-            }
-          });
-        });
-      });
-
-      localStorage.setItem('erp_sku_tree', JSON.stringify(skuTree));
-      alert("Hierarchy successfully synchronized with Empty/Taped/Ready and Flap/Regular/Gaddi sub-categories!");
-      renderAll();
     }
 
     // 2. RAW MATERIAL & PRICE INFLATION SURGE RADAR
@@ -1163,19 +1136,19 @@
     }
 
     function updateDropdowns() {
+      const parentSel = document.getElementById('parent-sku-select');
+      parentSel.innerHTML = '<option value="">-- Select Parent Category/SKU --</option>';
+
       const invSel = document.getElementById('inv-sku-select');
       const recSel = document.getElementById('rec-sku-select');
       const ordSel = document.getElementById('ord-sku-select');
-      
       invSel.innerHTML = recSel.innerHTML = ordSel.innerHTML = '<option value="">-- Select SKU Variant --</option>';
 
       const flat = [];
       function flatten(nodes, path) {
         nodes.forEach(n => {
           const cur = path ? `${path} ➔ ${n.name}` : n.name;
-          if (!n.children || n.children.length === 0) {
-            flat.push({ id: n.id, path: cur });
-          }
+          flat.push({ id: n.id, path: cur });
           if (n.children) flatten(n.children, cur);
         });
       }
@@ -1183,6 +1156,7 @@
 
       flat.forEach(f => {
         const opt = `<option value="${f.id}">${f.path}</option>`;
+        parentSel.innerHTML += opt;
         invSel.innerHTML += opt; recSel.innerHTML += opt; ordSel.innerHTML += opt;
       });
 
